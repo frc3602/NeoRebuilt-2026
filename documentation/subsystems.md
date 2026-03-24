@@ -40,6 +40,22 @@ Useful commands:
 - `alignOnceCommand()`
 - `aimAtHubWithMotionCompCommand()`
 
+Current tuning note:
+
+- Motion Magic speed tuning was increased from cruise `20.0` / accel `40.0` / jerk `200.0`
+- Previous turret values were cruise `22.0` / accel `44.0` / jerk `220.0`
+- Previous turret values were cruise `24.0` / accel `48.0` / jerk `240.0`
+- Previous turret values were cruise `28.0` / accel `56.0` / jerk `280.0`
+- Previous turret values were cruise `35.0` / accel `70.0` / jerk `350.0`
+- Previous turret values were cruise `43.75` / accel `87.5` / jerk `437.5`
+- Previous turret values were cruise `54.6875` / accel `109.375` / jerk `546.875`
+- Previous turret values were cruise `68.0` / accel `137.0` / jerk `684.0`
+- Previous turret values were cruise `85.0` / accel `171.0` / jerk `855.0`
+- Previous turret values were cruise `85.0` / accel `214.0` / jerk `1069.0`
+- Previous turret values were cruise `85.0` / accel `268.0` / jerk `1336.0`
+- Current turret values are cruise `85.0` / accel `335.0` / jerk `1670.0`
+- If more speed is needed later, adjust cruise first, then acceleration, then jerk in `Constants.TurretConstants`
+
 ## `Shooter`
 
 Purpose:

@@ -19,7 +19,7 @@ public final class Constants {
 
         // Legacy percent output and nominal closed-loop reference speed
         public static final double kShooterSpeed = .75;
-        public static final double kShooterTargetVelocityRotationsPerSecond = 100.0;
+        public static final double kShooterTargetVelocityRotationsPerSecond = -100.0;
 
         public static final double kShooterCurrentLimit = 60.0;
         public static final double kShooterVelocityKP = 0.11;
@@ -33,12 +33,13 @@ public final class Constants {
 
         // Distance-to-speed placeholder model for later calibration.
         public static final double kReferenceShotDistanceMeters = 3.0;
-        public static final double kShooterMinVelocityRotationsPerSecond = 70.0;
-        public static final double kShooterMaxVelocityRotationsPerSecond = 130.0;
-        public static final double kShooterVelocitySlopeRotationsPerSecondPerMeter = 9.0;
+        public static final double kShooterMinVelocityRotationsPerSecond = -130.0;
+        public static final double kShooterMaxVelocityRotationsPerSecond = -70.0;
+        public static final double kShooterVelocitySlopeRotationsPerSecondPerMeter = -9.0;
 
         //Failsafe Speed
-        public static final double kShooterFailsafeSpeed = -37.5;
+        public static final double kShooterFailsafeSpeed = 37.5;
+        public static final double kShooterReverseVelocityRotationsPerSecond = 37.5;
 
         public static double velocityForDistanceMeters(double distanceMeters) {
             double targetVelocity = kShooterTargetVelocityRotationsPerSecond
@@ -75,8 +76,8 @@ public final class Constants {
 
         // Intake roller Motion Magic velocity tuning
         public static final double kIntakeCurrentLimit = 40.0;
-        public static final double kIntakeForwardVelocityRotationsPerSecond = 70.0;
-        public static final double kIntakeReverseVelocityRotationsPerSecond = -70.0;
+        public static final double kIntakeForwardVelocityRotationsPerSecond = -70.0;
+        public static final double kIntakeReverseVelocityRotationsPerSecond = 70.0;
         public static final double kIntakeVelocityKP = 0.12;
         public static final double kIntakeVelocityKI = 0.0;
         public static final double kIntakeVelocityKD = 0.0;
@@ -114,9 +115,9 @@ public final class Constants {
         public static final double kTurretKI = 0.0;
         public static final double kTurretKD = 0.0;
         public static final double kTurretKG = 0.0;
-        public static final double kTurretCruiseVelocityRotationsPerSecond = 20.0;
-        public static final double kTurretAccelerationRotationsPerSecondSquared = 40.0;
-        public static final double kTurretJerkRotationsPerSecondCubed = 200.0;
+        public static final double kTurretCruiseVelocityRotationsPerSecond = 85.0;
+        public static final double kTurretAccelerationRotationsPerSecondSquared = 335.0;
+        public static final double kTurretJerkRotationsPerSecondCubed = 1670.0;
         public static final double kTurretPositionToleranceDegrees = 2.0;
         public static final double kTurretProjectileSpeedMetersPerSecond = 12.0;
         public static final double kTurretMinimumLookaheadSeconds = 0.05;

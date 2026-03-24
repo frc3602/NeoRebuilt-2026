@@ -5,8 +5,16 @@
 package frc.robot;
 
 import com.pathplanner.lib.commands.PathPlannerAuto;
+
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -24,6 +32,14 @@ import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.Turret;
 
 public class RobotContainer {
+    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second                                                                             // max angular velocity
+    private final SwerveRequest.FieldCentric drive =
+        new SwerveRequest.FieldCentric()
+            .withDeadband(MaxSpeed * 0.1)
+            .withRotationalDeadband(MaxAngularRate * 0.1)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
   private final Drivetrain m_drivetrain = TunerConstants.createDrivetrain();
   @SuppressWarnings("unused")
   private final Limelight_Pose m_limelightPose = Limelight_Pose.getInstance();
@@ -39,6 +55,9 @@ public class RobotContainer {
   private final CommandXboxController m_operatorController =
       new CommandXboxController(OIConstants.kOperatorControllerPort);
   private final SendableChooser<String> m_autoChooser = new SendableChooser<>();
+  private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
+
 
   public RobotContainer() {
     m_drivetrain.configPathplanner();
@@ -47,11 +66,25 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+
+      m_drivetrain.setDefaultCommand(
+                // Drivetrain will execute this command periodically
+                m_drivetrain.applyRequest(() -> drive.withVelocityX(m_driverController.getLeftY() * MaxSpeed) // Drive forward with
+                                                                                                  // negative Y
+                                                                                                  // (forward)
+                        .withVelocityY(-m_driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                        .withRotationalRate(-m_driverController.getRightX() * MaxAngularRate) // Drive counterclockwise with
+                                                                                    // negative X (left)
+
+    ));
+    
     Trigger scoreHeld = m_operatorController.b();
 
     m_operatorController.y()
         .whileTrue(m_superStructure.manualFeedReverse())
         .onFalse(m_superStructure.stopShoot());
+
+    m_operatorController.leftBumper().onTrue(m_superStructure.raisePivot());
 
     m_operatorController.rightBumper()
         .whileTrue(m_superStructure.shootFailsafe())
@@ -74,6 +107,10 @@ public class RobotContainer {
         .onFalse(reportUnimplementedDriveMode("Normal drive mode restore not implemented yet"));
 
     m_driverController.a().onTrue(reportUnimplementedDriveMode("Drive polarity change not implemented yet"));
+
+    m_driverController.x().onTrue(m_drivetrain.applyRequest(() -> brake));
+
+    
   }
 
   private void configureAutonomousChooser() {

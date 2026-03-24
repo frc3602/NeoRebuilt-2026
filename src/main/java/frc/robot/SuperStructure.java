@@ -10,7 +10,7 @@ import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.Turret;
 
 public class SuperStructure {
-    private static final double kManualFeedVelocityRotationsPerSecond = -56.125;
+    private static final double kManualFeedVelocityRotationsPerSecond = 56.125;
     private static final double kFailsafeShooterVelocityRotationsPerSecond =
         ShooterConstants.kShooterTargetVelocityRotationsPerSecond;
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 5.0;
@@ -38,26 +38,44 @@ public class SuperStructure {
 
     public Command manualFeedReverse() {
         return Commands.startEnd(
-            () -> spindexer.setFeedVelocityRotationsPerSecond(kManualFeedVelocityRotationsPerSecond),
-            spindexer::stop,
-            spindexer);
+            () -> {
+                shooter.setVelocityRotationsPerSecond(
+                    ShooterConstants.kShooterReverseVelocityRotationsPerSecond);
+                spindexer.setFeedVelocityRotationsPerSecond(kManualFeedVelocityRotationsPerSecond);
+                intake.intakeReverse();
+            },
+            () -> {
+                shooter.stop();
+                spindexer.stop();
+                intake.stop();
+            },
+            shooter,
+            spindexer,
+            intake);
     }
 
     public Command shootFailsafe() {
+        final boolean[] hasStartedFeeding = {false};
         return Commands.parallel(
             Commands.run(() -> turret.setTurretAngleDegrees(180.0), turret),
             Commands.run(() -> shooter.setVelocityRotationsPerSecond(
                 kFailsafeShooterVelocityRotationsPerSecond), shooter),
             Commands.runEnd(
                 () -> {
-                    if (turret.atTarget()
+                    if (!hasStartedFeeding[0]
+                            && turret.atTarget()
                             && shooter.isNearTargetVelocity(kTrackedShotReadyToleranceRotationsPerSecond)) {
+                        hasStartedFeeding[0] = true;
+                    }
+
+                    if (hasStartedFeeding[0]) {
                         spindexer.feedForward();
-                    } else {
-                        spindexer.stop();
                     }
                 },
-                spindexer::stop,
+                () -> {
+                    hasStartedFeeding[0] = false;
+                    spindexer.stop();
+                },
                 spindexer));
     }
 
@@ -74,7 +92,7 @@ public class SuperStructure {
     }
 
     public Command trackAllianceTower() {
-        return turret.alignCommand();
+        return shootTrackedLerpShot();
     }
 
     public boolean isTrackedLerpShotReady() {
@@ -83,18 +101,24 @@ public class SuperStructure {
     }
 
     public Command shootTrackedLerpShot() {
+        final boolean[] hasStartedFeeding = {false};
         return Commands.parallel(
             turret.alignCommand(),
             shooter.runDistanceBasedVelocityCommand(),
             Commands.runEnd(
                 () -> {
-                    if (isTrackedLerpShotReady()) {
+                    if (!hasStartedFeeding[0] && isTrackedLerpShotReady()) {
+                        hasStartedFeeding[0] = true;
+                    }
+
+                    if (hasStartedFeeding[0]) {
                         spindexer.feedForward();
-                    } else {
-                        spindexer.stop();
                     }
                 },
-                spindexer::stop,
+                () -> {
+                    hasStartedFeeding[0] = false;
+                    spindexer.stop();
+                },
                 spindexer));
     }
 
@@ -124,6 +148,10 @@ public class SuperStructure {
 
     public Command dropPivot() {
         return pivot.dumbDropIntake();
+    }
+
+    public Command raisePivot() {
+        return pivot.dumbRaiseIntake();
     }
 
     public Command runIntake() {

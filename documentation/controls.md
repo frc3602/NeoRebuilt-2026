@@ -10,7 +10,7 @@ This file describes the current controller bindings from `RobotContainer`.
 - While held:
   - turret aligns to the live target
   - shooter updates to distance-based speed
-  - spindexer feeds automatically once the shot is ready
+  - spindexer starts automatically once the shot is ready and keeps feeding until release
 
 ### `Right Bumper` hold
 
@@ -18,13 +18,25 @@ This file describes the current controller bindings from `RobotContainer`.
 - While held:
   - turret moves to the rear preset
   - shooter runs at the fixed failsafe speed
-  - spindexer feeds automatically once the shot is ready
+  - spindexer starts automatically once the shot is ready and keeps feeding until release
 
 ### `Y` hold
 
-- Reverses the feed path for clearing or unjamming.
+- Reverses the shooter, receiver/spindexer, and intake for clearing or unjamming.
+
+### `Left Bumper`
+
+- Raises the intake pivot to the up position.
 
 ## Driver Controller
+
+### `Left Stick`
+
+- Drives the robot translationally in field-centric control.
+
+### `Right Stick X`
+
+- Rotates the robot.
 
 ### `Right Bumper`
 
@@ -46,6 +58,14 @@ This file describes the current controller bindings from `RobotContainer`.
 
 - Reserved.
 - Currently reports that drive polarity change is not implemented.
+
+### `X` hold
+
+- Brakes the swerve drive.
+
+### `Y` hold
+
+- Points the swerve modules toward the left stick direction.
 
 ## Driver Rumble
 
