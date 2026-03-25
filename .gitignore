@@ -136,7 +136,9 @@ $RECYCLE.BIN/
 *.lnk
 
 ### Gradle ###
-.gradle
+.gradle/
+.gradle-project-cache/
+.gradle-user-home/
 /build/
 
 # Ignore Gradle GUI config
