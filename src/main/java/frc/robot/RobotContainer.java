@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OIConstants;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Limelight_Pose;
@@ -46,6 +47,7 @@ public class RobotContainer {
   private final Turret m_turret = new Turret(m_drivetrain);
   private final Shooter m_shooter = new Shooter(m_drivetrain);
   private final Pivot m_pivot = new Pivot();
+  private final Climber m_climber = new Climber();
   private final Intake m_intake = new Intake();
   private final Spindexer m_spindexer = new Spindexer();
   private final SuperStructure m_superStructure =
@@ -139,6 +141,10 @@ public class RobotContainer {
 
   public Intake getIntake() {
     return m_intake;
+  }
+
+  public Climber getClimber() {
+    return m_climber;
   }
 
   public Spindexer getSpindexer() {

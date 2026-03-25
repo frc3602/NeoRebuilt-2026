@@ -57,10 +57,27 @@ public final class Constants {
         // Set this to true when the climber hardware is back on the robot and the
         // CAN ID below is correct. Leaving it false keeps the climber code in the
         // project without letting the robot talk to hardware that is not installed.
-        public static final boolean kClimberEnabled = false;
+        public static final boolean kClimberEnabled = true;
 
         //Motor ID
         public static final int kClimberMotorID = 15;
+
+        public static final double kClimberCurrentLimit = 40.0;
+        public static final double kClimberGearRatio = 20.25;
+        public static final double kClimberSprocketDiameterInches = 2.15;
+
+        public static final double kClimberPositionKP = 43.19;
+        public static final double kClimberPositionKI = 0.0;
+        public static final double kClimberPositionKD = 0.19;
+
+        public static final double kClimberFeedforwardKS = 0.0;
+        public static final double kClimberFeedforwardKG = 0.69;
+        public static final double kClimberFeedforwardKV = 15.79;
+        public static final double kClimberFeedforwardKA = 0.07;
+
+        public static final double kClimberRaiseHeightInches = 20.0;
+        public static final double kClimberLowerHeightInches = 5.0;
+        public static final double kClimberHeightToleranceInches = 0.5;
     }
 
     public static final class OIConstants {
