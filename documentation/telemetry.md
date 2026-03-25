@@ -69,6 +69,14 @@ Published under `Elastic/Pivot`:
 - `MeasuredAngleDegrees`
 - `SetpointAngleDegrees`
 
+## Climber Topics
+
+Published under `Elastic/Climber`:
+
+- `EncoderRotations`
+- `EncoderTargetRotations`
+- `IsAtPosition`
+
 ## Intake Topics
 
 Published under `Elastic/Intake`:

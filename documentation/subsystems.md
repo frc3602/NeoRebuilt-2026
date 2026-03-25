@@ -90,6 +90,33 @@ Useful commands:
 - `dumbRaiseIntake()`
 - `setPivotPositionCommand(...)`
 
+## `Climber`
+
+Purpose:
+
+- Motion Magic position control for the climber
+
+Key behavior:
+
+- initializes the TalonFX rotor position to `0` on startup
+- uses rotor encoder rotations directly for setpoints and telemetry
+- keeps two main presets:
+  - down = `0`
+  - up = current tuned value in `Constants.ClimberConstants.kClimberUpRotations`
+
+Useful commands:
+
+- `raiseCommand()`
+- `lowerCommand()`
+- `setClimberPositionCommand(...)`
+- `stopCommand()`
+
+Current tuning note:
+
+- Climber Motion Magic is currently using cruise `27.0` / accel `54.0` / jerk `270.0`
+- Those values were increased in three 50% steps from cruise `8.0` / accel `16.0` / jerk `80.0`
+- If the climber becomes too aggressive, reduce acceleration first, then cruise velocity, then jerk
+
 ## `Intake`
 
 Purpose:
@@ -117,6 +144,9 @@ Key behavior:
 
 - receiver speed is derived from spindexer speed
 - receiver is faster than spindexer but slower than the shooter target speed
+- when commanded to run, a jam is detected if feed velocity stays low while either motor current is high
+- jam detection waits briefly after startup and requires the condition to persist before reacting
+- on a detected jam, both motors reverse at reduced speed for `0.35` seconds and then automatically resume the commanded direction
 
 Useful commands:
 

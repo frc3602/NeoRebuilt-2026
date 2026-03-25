@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotContainer;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Limelight_Pose;
 import frc.robot.subsystems.Drivetrain;
@@ -60,6 +61,9 @@ public class ElasticTelemetry {
   private final DoublePublisher m_shooterMeasuredVelocityPublisher;
   private final DoublePublisher m_pivotMeasuredAnglePublisher;
   private final DoublePublisher m_pivotSetpointPublisher;
+  private final DoublePublisher m_climberPositionPublisher;
+  private final DoublePublisher m_climberTargetPositionPublisher;
+  private final BooleanPublisher m_climberAtTargetPublisher;
   private final DoublePublisher m_intakeTargetVelocityPublisher;
   private final DoublePublisher m_intakeMeasuredVelocityPublisher;
   private final DoublePublisher m_spindexerTargetVelocityPublisher;
@@ -75,6 +79,7 @@ public class ElasticTelemetry {
     NetworkTable turretTable = elasticTable.getSubTable("Turret");
     NetworkTable shooterTable = elasticTable.getSubTable("Shooter");
     NetworkTable pivotTable = elasticTable.getSubTable("Pivot");
+    NetworkTable climberTable = elasticTable.getSubTable("Climber");
     NetworkTable intakeTable = elasticTable.getSubTable("Intake");
     NetworkTable spindexerTable = elasticTable.getSubTable("Spindexer");
 
@@ -118,6 +123,9 @@ public class ElasticTelemetry {
 
     m_pivotMeasuredAnglePublisher = pivotTable.getDoubleTopic("MeasuredAngleDegrees").publish();
     m_pivotSetpointPublisher = pivotTable.getDoubleTopic("SetpointAngleDegrees").publish();
+    m_climberPositionPublisher = climberTable.getDoubleTopic("EncoderRotations").publish();
+    m_climberTargetPositionPublisher = climberTable.getDoubleTopic("EncoderTargetRotations").publish();
+    m_climberAtTargetPublisher = climberTable.getBooleanTopic("IsAtPosition").publish();
 
     m_intakeTargetVelocityPublisher = intakeTable.getDoubleTopic("TargetVelocityRPS").publish();
     m_intakeMeasuredVelocityPublisher = intakeTable.getDoubleTopic("MeasuredVelocityRPS").publish();
@@ -139,6 +147,7 @@ public class ElasticTelemetry {
     Turret turret = robotContainer.getTurret();
     Shooter shooter = robotContainer.getShooter();
     Pivot pivot = robotContainer.getPivot();
+    Climber climber = robotContainer.getClimber();
     Intake intake = robotContainer.getIntake();
     Spindexer spindexer = robotContainer.getSpindexer();
     Pose2d pose = drivetrain.getEstimatedPose();
@@ -195,6 +204,9 @@ public class ElasticTelemetry {
 
     m_pivotMeasuredAnglePublisher.set(pivot.getRightPosition());
     m_pivotSetpointPublisher.set(pivot.getPivotSetpointDegrees());
+    m_climberPositionPublisher.set(climber.getClimberPositionRotations());
+    m_climberTargetPositionPublisher.set(climber.getTargetPositionRotations());
+    m_climberAtTargetPublisher.set(climber.atTarget());
 
     m_intakeTargetVelocityPublisher.set(intake.getTargetVelocityRotationsPerSecond());
     m_intakeMeasuredVelocityPublisher.set(intake.getMeasuredVelocityRotationsPerSecond());

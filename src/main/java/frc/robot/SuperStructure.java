@@ -100,6 +100,13 @@ public class SuperStructure {
             && shooter.isNearTargetVelocity(kTrackedShotReadyToleranceRotationsPerSecond);
     }
 
+    public boolean isTrackedLerpShotFeedReady() {
+        return Math.abs(
+            Math.abs(shooter.getMeasuredVelocityRotationsPerSecond())
+                - Math.abs(shooter.getTargetVelocityRotationsPerSecond()))
+            <= kTrackedShotReadyToleranceRotationsPerSecond;
+    }
+
     public Command shootTrackedLerpShot() {
         final boolean[] hasStartedFeeding = {false};
         return Commands.parallel(
@@ -107,7 +114,7 @@ public class SuperStructure {
             shooter.runDistanceBasedVelocityCommand(),
             Commands.runEnd(
                 () -> {
-                    if (!hasStartedFeeding[0] && isTrackedLerpShotReady()) {
+                    if (!hasStartedFeeding[0] && isTrackedLerpShotFeedReady()) {
                         hasStartedFeeding[0] = true;
                     }
 

@@ -87,6 +87,8 @@ public class RobotContainer {
         .onFalse(m_superStructure.stopShoot());
 
     m_operatorController.leftBumper().onTrue(m_superStructure.raisePivot());
+    m_operatorController.povUp().onTrue(m_climber.raiseCommand());
+    m_operatorController.povDown().onTrue(m_climber.lowerCommand());
 
     m_operatorController.rightBumper()
         .whileTrue(m_superStructure.shootFailsafe())
@@ -110,7 +112,7 @@ public class RobotContainer {
 
     m_driverController.a().onTrue(reportUnimplementedDriveMode("Drive polarity change not implemented yet"));
 
-    m_driverController.x().onTrue(m_drivetrain.applyRequest(() -> brake));
+    m_driverController.x().whileTrue(m_drivetrain.applyRequest(() -> brake));
 
     
   }

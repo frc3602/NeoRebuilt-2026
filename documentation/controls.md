@@ -28,6 +28,14 @@ This file describes the current controller bindings from `RobotContainer`.
 
 - Raises the intake pivot to the up position.
 
+### `POV Up`
+
+- Sends the climber to the up setpoint.
+
+### `POV Down`
+
+- Sends the climber to the down setpoint (`0`).
+
 ## Driver Controller
 
 ### `Left Stick`

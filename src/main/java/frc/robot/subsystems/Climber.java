@@ -1,13 +1,14 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -17,92 +18,66 @@ public class Climber extends SubsystemBase {
     private final boolean climberEnabled = ClimberConstants.kClimberEnabled;
     private final TalonFX climberMotor;
 
-    private final PIDController positionController = new PIDController(
-        ClimberConstants.kClimberPositionKP,
-        ClimberConstants.kClimberPositionKI,
-        ClimberConstants.kClimberPositionKD);
-    private final ArmFeedforward feedforward = new ArmFeedforward(
-        ClimberConstants.kClimberFeedforwardKS,
-        ClimberConstants.kClimberFeedforwardKG,
-        ClimberConstants.kClimberFeedforwardKV,
-        ClimberConstants.kClimberFeedforwardKA);
-    private final VoltageOut voltageRequest = new VoltageOut(0);
-
-    private double targetHeightInches = ClimberConstants.kClimberLowerHeightInches;
-    private double pidEffortVolts = 0.0;
-    private double feedforwardEffortVolts = 0.0;
-    private double appliedVoltageVolts = 0.0;
+    private final MotionMagicVoltage positionRequest = new MotionMagicVoltage(0);
+    private final VoltageOut stopRequest = new VoltageOut(0);
+    private double targetPositionRotations = ClimberConstants.kClimberDownRotations;
 
     public Climber() {
         if (climberEnabled) {
             climberMotor = new TalonFX(ClimberConstants.kClimberMotorID);
             configureMotor();
-            stop();
+            seedPositionZero();
+            setClimberPositionRotations(ClimberConstants.kClimberDownRotations);
         } else {
             climberMotor = null;
         }
-
-        positionController.setTolerance(ClimberConstants.kClimberHeightToleranceInches);
     }
 
-    public double getHeightInches() {
+    public double getClimberPositionRotations() {
         if (!climberEnabled || climberMotor == null) {
-            return 0.0;
+            return ClimberConstants.kClimberDownRotations;
         }
 
-        return rotorRotationsToHeightInches(climberMotor.getRotorPosition().getValueAsDouble());
+        return climberMotor.getRotorPosition().getValueAsDouble();
     }
 
-    public double getTargetHeightInches() {
-        return targetHeightInches;
+    public double getTargetPositionRotations() {
+        return targetPositionRotations;
     }
 
-    public double getPidEffortVolts() {
-        return pidEffortVolts;
+    public boolean atTarget() {
+        return Math.abs(getClimberPositionRotations() - targetPositionRotations)
+            <= ClimberConstants.kClimberPositionToleranceRotations;
     }
 
-    public double getFeedforwardEffortVolts() {
-        return feedforwardEffortVolts;
-    }
-
-    public double getAppliedVoltageVolts() {
-        return appliedVoltageVolts;
-    }
-
-    public boolean isAtTargetHeight() {
-        if (!climberEnabled) {
-            return true;
-        }
-
-        return positionController.atSetpoint();
-    }
-
-    public void setHeightInches(double targetHeightInches) {
-        this.targetHeightInches = targetHeightInches;
-    }
-
-    public void stop() {
-        pidEffortVolts = 0.0;
-        feedforwardEffortVolts = 0.0;
-        appliedVoltageVolts = 0.0;
+    public void setClimberPositionRotations(double targetPositionRotations) {
+        this.targetPositionRotations = targetPositionRotations;
 
         if (!climberEnabled || climberMotor == null) {
             return;
         }
 
-        climberMotor.setControl(voltageRequest.withOutput(0));
+        climberMotor.setControl(positionRequest.withPosition(targetPositionRotations));
     }
 
-    public Command setHeightCommand(double targetHeightInches) {
-        return runOnce(() -> setHeightInches(targetHeightInches));
+    public void stop() {
+        if (!climberEnabled || climberMotor == null) {
+            return;
+        }
+
+        climberMotor.setControl(stopRequest.withOutput(0));
+    }
+
+    public Command setClimberPositionCommand(double targetPositionRotations) {
+        return runOnce(() -> setClimberPositionRotations(targetPositionRotations));
     }
 
     public Command raiseCommand() {
-        return setHeightCommand(ClimberConstants.kClimberRaiseHeightInches);
+        return setClimberPositionCommand(ClimberConstants.kClimberUpRotations);
     }
 
     public Command lowerCommand() {
-        return setHeightCommand(ClimberConstants.kClimberLowerHeightInches);
+        return setClimberPositionCommand(ClimberConstants.kClimberDownRotations);
     }
 
     public Command stopCommand() {
@@ -112,19 +87,13 @@ public class Climber extends SubsystemBase {
     @Override
     public void periodic() {
         SmartDashboard.putBoolean("Climber Enabled", climberEnabled);
-        SmartDashboard.putNumber("Climber Target Height Inches", targetHeightInches);
-        SmartDashboard.putNumber("Climber Height Inches", getHeightInches());
-        SmartDashboard.putBoolean("Climber At Target", isAtTargetHeight());
+        SmartDashboard.putNumber("Climber Position Rotations", getClimberPositionRotations());
+        SmartDashboard.putNumber("Climber Target Rotations", targetPositionRotations);
+        SmartDashboard.putBoolean("Climber At Target", atTarget());
+    }
 
-        if (!climberEnabled || climberMotor == null) {
-            return;
-        }
-
-        pidEffortVolts = positionController.calculate(getHeightInches(), targetHeightInches);
-        feedforwardEffortVolts = feedforward.calculate(0.0, 0.0);
-        appliedVoltageVolts = pidEffortVolts + feedforwardEffortVolts;
-
-        climberMotor.setControl(voltageRequest.withOutput(appliedVoltageVolts));
+    private void seedPositionZero() {
+        climberMotor.setPosition(ClimberConstants.kClimberDownRotations);
     }
 
     private void configureMotor() {
@@ -135,12 +104,23 @@ public class Climber extends SubsystemBase {
         currentLimitConfigs.StatorCurrentLimit = ClimberConstants.kClimberCurrentLimit;
         currentLimitConfigs.StatorCurrentLimitEnable = true;
 
+        var slot0Configs = new Slot0Configs();
+        slot0Configs.kP = ClimberConstants.kClimberKP;
+        slot0Configs.kI = ClimberConstants.kClimberKI;
+        slot0Configs.kD = ClimberConstants.kClimberKD;
+        slot0Configs.kG = ClimberConstants.kClimberKG;
+
+        var motionMagicConfigs = new MotionMagicConfigs();
+        motionMagicConfigs.MotionMagicCruiseVelocity =
+            ClimberConstants.kClimberCruiseVelocityRotationsPerSecond;
+        motionMagicConfigs.MotionMagicAcceleration =
+            ClimberConstants.kClimberAccelerationRotationsPerSecondSquared;
+        motionMagicConfigs.MotionMagicJerk =
+            ClimberConstants.kClimberJerkRotationsPerSecondCubed;
+
         climberMotor.getConfigurator().apply(motorOutputConfigs);
         climberMotor.getConfigurator().apply(currentLimitConfigs);
-    }
-
-    private double rotorRotationsToHeightInches(double rotorRotations) {
-        return (rotorRotations / ClimberConstants.kClimberGearRatio)
-            * (Math.PI * ClimberConstants.kClimberSprocketDiameterInches);
+        climberMotor.getConfigurator().apply(slot0Configs);
+        climberMotor.getConfigurator().apply(motionMagicConfigs);
     }
 }

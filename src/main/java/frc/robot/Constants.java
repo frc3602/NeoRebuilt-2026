@@ -63,21 +63,16 @@ public final class Constants {
         public static final int kClimberMotorID = 15;
 
         public static final double kClimberCurrentLimit = 40.0;
-        public static final double kClimberGearRatio = 20.25;
-        public static final double kClimberSprocketDiameterInches = 2.15;
-
-        public static final double kClimberPositionKP = 43.19;
-        public static final double kClimberPositionKI = 0.0;
-        public static final double kClimberPositionKD = 0.19;
-
-        public static final double kClimberFeedforwardKS = 0.0;
-        public static final double kClimberFeedforwardKG = 0.69;
-        public static final double kClimberFeedforwardKV = 15.79;
-        public static final double kClimberFeedforwardKA = 0.07;
-
-        public static final double kClimberRaiseHeightInches = 20.0;
-        public static final double kClimberLowerHeightInches = 5.0;
-        public static final double kClimberHeightToleranceInches = 0.5;
+        public static final double kClimberKP = 8.0;
+        public static final double kClimberKI = 0.0;
+        public static final double kClimberKD = 0.0;
+        public static final double kClimberKG = 0.0;
+        public static final double kClimberCruiseVelocityRotationsPerSecond = 27.0;
+        public static final double kClimberAccelerationRotationsPerSecondSquared = 54.0;
+        public static final double kClimberJerkRotationsPerSecondCubed = 270.0;
+        public static final double kClimberDownRotations = 0.0;
+        public static final double kClimberUpRotations = 65;
+        public static final double kClimberPositionToleranceRotations = 0.2;
     }
 
     public static final class OIConstants {
@@ -168,6 +163,13 @@ public final class Constants {
         public static final double kFeedVelocityKA = 0.10;
         public static final double kFeedAccelerationRotationsPerSecondSquared = 400.0;
         public static final double kFeedJerkRotationsPerSecondCubed = 6000.0;
+        public static final double kJamDetectionVelocityRatio = 0.35;
+        public static final double kJamCurrentThresholdAmps = 32.0;
+        public static final double kJamRecoverySeconds = 0.35;
+        public static final double kJamRecoveryReverseScale = 0.4;
+        public static final double kJamDetectionDelaySeconds = 0.25;
+        public static final double kJamDetectionConfirmSeconds = 0.10;
+        public static final double kJamRecoveryCooldownSeconds = 0.50;
     }
 
     public static final class FieldConstants {
