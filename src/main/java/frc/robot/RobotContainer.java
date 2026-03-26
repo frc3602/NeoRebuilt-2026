@@ -34,6 +34,7 @@ import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.Turret;
 
 public class RobotContainer {
+    private static final String kPreferredAutoName = "Basic Center Auto";
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second                                                                             // max angular velocity
     private final SwerveRequest.FieldCentric drive =
@@ -120,11 +121,14 @@ public class RobotContainer {
   }
 
   private void configureAutonomousChooser() {
-    m_autoChooser.setDefaultOption("None", "");
-
-    for (String autoName : AutoBuilder.getAllAutoNames()) {
-      m_autoChooser.addOption(autoName, autoName);
+    if (AutoBuilder.getAllAutoNames().contains(kPreferredAutoName)) {
+      m_autoChooser.setDefaultOption(kPreferredAutoName, kPreferredAutoName);
+      return;
     }
+
+    m_autoChooser.setDefaultOption("None", "");
+    DriverStation.reportWarning(
+        "Preferred auto '" + kPreferredAutoName + "' was not found in PathPlanner autos.", false);
   }
 
   private void configureNamedCommands() {
@@ -148,7 +152,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("StopIntake", m_superStructure.stopIntake());
 
     NamedCommands.registerCommand(
-        "AutonPrepareTrackedShot", m_superStructure.autonShootTrackedShot());
+        "AutonPrepareTrackedShot", m_superStructure.autonPrepareTrackedShot());
     NamedCommands.registerCommand(
         "AutonPrepareFailsafeShot", m_superStructure.autonPrepareFailsafeShot());
     NamedCommands.registerCommand(
@@ -215,20 +219,12 @@ public class RobotContainer {
     }
 
     try {
-      Command autoPathCommand = new PathPlannerAuto(autoName);
-      if (autoRequiresEndShot(autoName)) {
-        return Commands.deadline(autoPathCommand, m_superStructure.shootTrackedLerpShot());
-      }
-      return Commands.deadline(autoPathCommand, m_turret.aimAtHubWithMotionCompCommand());
+      return new PathPlannerAuto(autoName);
     } catch (RuntimeException ex) {
       DriverStation.reportError(
           "Failed to create autonomous command '" + autoName + "': " + ex.getMessage(), false);
       return Commands.print("Failed to create autonomous command");
     }
-  }
-
-  private boolean autoRequiresEndShot(String autoName) {
-    return autoName.contains("Shoot");
   }
 
   private Command driverShotReadyRumble() {

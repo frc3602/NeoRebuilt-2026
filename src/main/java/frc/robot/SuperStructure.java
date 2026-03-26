@@ -14,8 +14,7 @@ public class SuperStructure {
     private static final double kFailsafeShooterVelocityRotationsPerSecond =
         ShooterConstants.kShooterTargetVelocityRotationsPerSecond;
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 5.0;
-    private static final double kAutonTrackedShotPrepTimeoutSeconds = 1.25;
-    private static final double kAutonFeedTimeSeconds = 0.80;
+    private static final double kAutonFeedTimeSeconds = 0.35;
     private static final double kAutonIntakeTimeSeconds = 1.0;
 
     private final Turret turret;
@@ -189,27 +188,17 @@ public class SuperStructure {
     }
 
     public Command autonFeedShot() {
-        return Commands.deadline(
+        return Commands.sequence(
+            spindexer.feedForwardCommand(),
             Commands.waitSeconds(kAutonFeedTimeSeconds),
-            Commands.run(spindexer::feedForward, spindexer))
-            .finallyDo(spindexer::stop);
+            spindexer.stopCommand());
     }
 
     public Command autonShootTrackedShot() {
         return Commands.sequence(
-            Commands.deadline(
-                Commands.waitUntil(this::isTrackedLerpShotReady)
-                    .withTimeout(kAutonTrackedShotPrepTimeoutSeconds),
-                turret.aimAtHubWithMotionCompCommand(),
-                shooter.runDistanceBasedVelocityCommand()),
-            Commands.deadline(
-                Commands.waitSeconds(kAutonFeedTimeSeconds),
-                shooter.runDistanceBasedVelocityCommand(),
-                Commands.run(spindexer::feedForward, spindexer))
-                .finallyDo(() -> {
-                    spindexer.stop();
-                    shooter.stop();
-                }));
+            autonPrepareTrackedShot(),
+            autonWaitForTrackedShotReady(),
+            autonFeedShot());
     }
 
     public Command autonShootFailsafeShot() {

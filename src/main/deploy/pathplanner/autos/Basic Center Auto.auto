@@ -9,6 +9,18 @@
           "data": {
             "pathName": "Center Backup Path"
           }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutonShootTrackedShot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutonFeedShot"
+          }
         }
       ]
     }
