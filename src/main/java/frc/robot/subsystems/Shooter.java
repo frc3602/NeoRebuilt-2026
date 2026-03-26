@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -11,6 +12,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -18,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.Constants.TurretConstants;
 
 public class Shooter extends SubsystemBase {
     private final TalonFX shooterLeader = new TalonFX(ShooterConstants.kShooterMotor1ID);
@@ -60,14 +63,17 @@ public class Shooter extends SubsystemBase {
     }
 
     public void setVelocityRotationsPerSecond(double targetVelocityRotationsPerSecond) {
-        this.targetVelocityRotationsPerSecond = targetVelocityRotationsPerSecond;
-        shooterLeader.setControl(velocityRequest.withVelocity(targetVelocityRotationsPerSecond));
+        this.targetVelocityRotationsPerSecond = Math.min(
+            targetVelocityRotationsPerSecond,
+            ShooterConstants.kShooterCommandMaxVelocityRotationsPerSecond);
+        shooterLeader.setControl(
+            velocityRequest.withVelocity(this.targetVelocityRotationsPerSecond));
         shooterFollower.setControl(followerRequest);
     }
 
     public void updateVelocityForCurrentDistance() {
         setVelocityRotationsPerSecond(
-            ShooterConstants.velocityForDistanceMeters(getDistanceToHubMeters()));
+            ShooterConstants.velocityForDistanceMeters(getCompensatedDistanceToHubMeters()));
     }
 
     public void stop() {
@@ -97,6 +103,35 @@ public class Shooter extends SubsystemBase {
             : FieldConstants.kBlueHubPosition;
     }
 
+    private double getCompensatedDistanceToHubMeters() {
+        Pose2d robotPose = drivetrain.getEstimatedPose();
+        Translation2d robotTranslation = robotPose.getTranslation();
+        Translation2d hubTranslation = getCurrentHubTranslation();
+        var chassisSpeeds = drivetrain.getState().Speeds;
+        Translation2d fieldRelativeVelocity = new Translation2d(
+            chassisSpeeds.vxMetersPerSecond,
+            chassisSpeeds.vyMetersPerSecond).rotateBy(robotPose.getRotation());
+
+        double currentDistanceMeters = robotTranslation.getDistance(hubTranslation);
+        double lookaheadSeconds = calculateBallTimeOfFlightSeconds(currentDistanceMeters);
+
+        // Recompute once from the predicted pose so the setpoint is based on where
+        // the robot will be when the note reaches the target.
+        Translation2d predictedTranslation =
+            robotTranslation.plus(fieldRelativeVelocity.times(lookaheadSeconds));
+        double predictedDistanceMeters = predictedTranslation.getDistance(hubTranslation);
+
+        return predictedTranslation.plus(
+            fieldRelativeVelocity.times(calculateBallTimeOfFlightSeconds(predictedDistanceMeters)))
+            .getDistance(hubTranslation);
+    }
+
+    private double calculateBallTimeOfFlightSeconds(double distanceMeters) {
+        return Math.max(
+            ShooterConstants.kShooterMinimumLookaheadSeconds,
+            distanceMeters / TurretConstants.kTurretProjectileSpeedMetersPerSecond);
+    }
+
     private void configureMotor(TalonFX motor) {
         var motorOutputConfigs = new MotorOutputConfigs();
         motorOutputConfigs.NeutralMode = NeutralModeValue.Coast;
@@ -104,6 +139,9 @@ public class Shooter extends SubsystemBase {
         var currentLimitConfigs = new CurrentLimitsConfigs();
         currentLimitConfigs.StatorCurrentLimit = ShooterConstants.kShooterCurrentLimit;
         currentLimitConfigs.StatorCurrentLimitEnable = true;
+
+        var feedbackConfigs = new FeedbackConfigs();
+        feedbackConfigs.SensorToMechanismRatio = ShooterConstants.kShooterSensorToMechanismRatio;
 
         var slot0Configs = new Slot0Configs();
         slot0Configs.kP = ShooterConstants.kShooterVelocityKP;
@@ -121,6 +159,7 @@ public class Shooter extends SubsystemBase {
 
         motor.getConfigurator().apply(motorOutputConfigs);
         motor.getConfigurator().apply(currentLimitConfigs);
+        motor.getConfigurator().apply(feedbackConfigs);
         motor.getConfigurator().apply(slot0Configs);
         motor.getConfigurator().apply(motionMagicConfigs);
     }

@@ -13,6 +13,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -63,6 +64,7 @@ public class RobotContainer {
 
   public RobotContainer() {
     m_drivetrain.configPathplanner();
+    configureNamedCommands();
     configureAutonomousChooser();
     configureBindings();
   }
@@ -125,6 +127,45 @@ public class RobotContainer {
     }
   }
 
+  private void configureNamedCommands() {
+    NamedCommands.registerCommand("ManualFeedReverse", m_superStructure.manualFeedReverse());
+    NamedCommands.registerCommand("ShootFailsafe", m_superStructure.shootFailsafe());
+    NamedCommands.registerCommand("PrepareFailsafeShot", m_superStructure.prepareFailsafeShot());
+    NamedCommands.registerCommand("StopShoot", m_superStructure.stopShoot());
+    NamedCommands.registerCommand("TrackAllianceTower", m_superStructure.trackAllianceTower());
+    NamedCommands.registerCommand(
+        "ShootTrackedLerpShot", m_superStructure.shootTrackedLerpShot());
+    NamedCommands.registerCommand("StopShooterOnly", m_superStructure.stopShooterOnly());
+    NamedCommands.registerCommand("TurretRearPreset", m_superStructure.turretRearPreset());
+    NamedCommands.registerCommand("TurretLeftPreset", m_superStructure.turretLeftPreset());
+    NamedCommands.registerCommand(
+        "TurretLeftCornerPreset", m_superStructure.turretLeftCornerPreset());
+    NamedCommands.registerCommand(
+        "TurretRightCornerPreset", m_superStructure.turretRightCornerPreset());
+    NamedCommands.registerCommand("DropPivot", m_superStructure.dropPivot());
+    NamedCommands.registerCommand("RaisePivot", m_superStructure.raisePivot());
+    NamedCommands.registerCommand("RunIntake", m_superStructure.runIntake());
+    NamedCommands.registerCommand("StopIntake", m_superStructure.stopIntake());
+
+    NamedCommands.registerCommand(
+        "AutonPrepareTrackedShot", m_superStructure.autonShootTrackedShot());
+    NamedCommands.registerCommand(
+        "AutonPrepareFailsafeShot", m_superStructure.autonPrepareFailsafeShot());
+    NamedCommands.registerCommand(
+        "AutonWaitForTrackedShotReady", m_superStructure.autonWaitForTrackedShotReady());
+    NamedCommands.registerCommand("AutonFeedShot", m_superStructure.autonFeedShot());
+    NamedCommands.registerCommand(
+        "AutonShootTrackedShot", m_superStructure.autonShootTrackedShot());
+    NamedCommands.registerCommand(
+        "AutonShootFailsafeShot", m_superStructure.autonShootFailsafeShot());
+    NamedCommands.registerCommand("AutonRunIntake", m_superStructure.autonRunIntake());
+    NamedCommands.registerCommand(
+        "AutonIntakeAndStage", m_superStructure.autonIntakeAndStage());
+    NamedCommands.registerCommand(
+        "AutonStopGamePiecePath", m_superStructure.autonStopGamePiecePath());
+    NamedCommands.registerCommand("AutonStow", m_superStructure.autonStow());
+  }
+
   public Drivetrain getDrivetrain() {
     return m_drivetrain;
   }
@@ -174,12 +215,20 @@ public class RobotContainer {
     }
 
     try {
-      return new PathPlannerAuto(autoName);
+      Command autoPathCommand = new PathPlannerAuto(autoName);
+      if (autoRequiresEndShot(autoName)) {
+        return Commands.deadline(autoPathCommand, m_superStructure.shootTrackedLerpShot());
+      }
+      return Commands.deadline(autoPathCommand, m_turret.aimAtHubWithMotionCompCommand());
     } catch (RuntimeException ex) {
       DriverStation.reportError(
           "Failed to create autonomous command '" + autoName + "': " + ex.getMessage(), false);
       return Commands.print("Failed to create autonomous command");
     }
+  }
+
+  private boolean autoRequiresEndShot(String autoName) {
+    return autoName.contains("Shoot");
   }
 
   private Command driverShotReadyRumble() {

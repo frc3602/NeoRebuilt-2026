@@ -19,7 +19,9 @@ public final class Constants {
 
         // Legacy percent output and nominal closed-loop reference speed
         public static final double kShooterSpeed = .75;
-        public static final double kShooterTargetVelocityRotationsPerSecond = -100.0;
+        public static final double kShooterTargetVelocityRotationsPerSecond = -95.0;
+        public static final double kShooterCommandMaxVelocityRotationsPerSecond = 95.0;
+        public static final double kShooterSensorToMechanismRatio = 22.0 / 18.0;
 
         public static final double kShooterCurrentLimit = 60.0;
         public static final double kShooterVelocityKP = 0.11;
@@ -36,6 +38,7 @@ public final class Constants {
         public static final double kShooterMinVelocityRotationsPerSecond = -130.0;
         public static final double kShooterMaxVelocityRotationsPerSecond = -70.0;
         public static final double kShooterVelocitySlopeRotationsPerSecondPerMeter = -9.0;
+        public static final double kShooterMinimumLookaheadSeconds = 0.05;
 
         //Failsafe Speed
         public static final double kShooterFailsafeSpeed = 37.5;
@@ -163,13 +166,6 @@ public final class Constants {
         public static final double kFeedVelocityKA = 0.10;
         public static final double kFeedAccelerationRotationsPerSecondSquared = 400.0;
         public static final double kFeedJerkRotationsPerSecondCubed = 6000.0;
-        public static final double kJamDetectionVelocityRatio = 0.35;
-        public static final double kJamCurrentThresholdAmps = 32.0;
-        public static final double kJamRecoverySeconds = 0.35;
-        public static final double kJamRecoveryReverseScale = 0.4;
-        public static final double kJamDetectionDelaySeconds = 0.25;
-        public static final double kJamDetectionConfirmSeconds = 0.10;
-        public static final double kJamRecoveryCooldownSeconds = 0.50;
     }
 
     public static final class FieldConstants {

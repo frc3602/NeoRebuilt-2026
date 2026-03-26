@@ -9,7 +9,6 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.SpindexerConstants;
@@ -25,11 +24,6 @@ public class Spindexer extends SubsystemBase {
     private final VoltageOut stopRequest = new VoltageOut(0);
     private double spindexerTargetVelocityRotationsPerSecond = 0.0;
     private double receiverTargetVelocityRotationsPerSecond = 0.0;
-    private boolean jamRecoveryActive = false;
-    private double jamRecoveryEndTimeSeconds = Double.NEGATIVE_INFINITY;
-    private double jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-    private double commandStartTimeSeconds = Double.NEGATIVE_INFINITY;
-    private double jamRecoveryCooldownEndTimeSeconds = Double.NEGATIVE_INFINITY;
 
     public Spindexer() {
         configureMotor(spindexerMotor, SpindexerConstants.kSpindexerCurrentLimit);
@@ -46,31 +40,19 @@ public class Spindexer extends SubsystemBase {
     }
 
     public void setFeedVelocityRotationsPerSecond(double spindexerVelocityRotationsPerSecond) {
-        boolean wasStopped = Math.abs(spindexerTargetVelocityRotationsPerSecond) < 1e-6;
         spindexerTargetVelocityRotationsPerSecond = spindexerVelocityRotationsPerSecond;
         receiverTargetVelocityRotationsPerSecond =
             spindexerVelocityRotationsPerSecond
                 * (SpindexerConstants.kReceiverSpeedRatioToShooter
                     / SpindexerConstants.kSpindexerSpeedRatioToShooter);
-        if (wasStopped && Math.abs(spindexerVelocityRotationsPerSecond) >= 1e-6) {
-            commandStartTimeSeconds = Timer.getFPGATimestamp();
-        }
-
-        if (!jamRecoveryActive) {
-            applyVelocityTargets(
-                spindexerTargetVelocityRotationsPerSecond,
-                receiverTargetVelocityRotationsPerSecond);
-        }
+        applyVelocityTargets(
+            spindexerTargetVelocityRotationsPerSecond,
+            receiverTargetVelocityRotationsPerSecond);
     }
 
     public void stop() {
         spindexerTargetVelocityRotationsPerSecond = 0.0;
         receiverTargetVelocityRotationsPerSecond = 0.0;
-        jamRecoveryActive = false;
-        jamRecoveryEndTimeSeconds = Double.NEGATIVE_INFINITY;
-        jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-        commandStartTimeSeconds = Double.NEGATIVE_INFINITY;
-        jamRecoveryCooldownEndTimeSeconds = Double.NEGATIVE_INFINITY;
         spindexerMotor.setControl(stopRequest.withOutput(0));
         receiverMotor.setControl(stopRequest.withOutput(0));
     }
@@ -99,10 +81,6 @@ public class Spindexer extends SubsystemBase {
         return receiverMotor.getStatorCurrent().getValueAsDouble();
     }
 
-    public boolean isJamRecoveryActive() {
-        return jamRecoveryActive;
-    }
-
     public Command feedForwardCommand() {
         return runOnce(this::feedForward);
     }
@@ -121,42 +99,6 @@ public class Spindexer extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (Math.abs(spindexerTargetVelocityRotationsPerSecond) < 1e-6) {
-            jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-            return;
-        }
-
-        double nowSeconds = Timer.getFPGATimestamp();
-        if (jamRecoveryActive) {
-            if (nowSeconds >= jamRecoveryEndTimeSeconds) {
-                jamRecoveryActive = false;
-                jamRecoveryCooldownEndTimeSeconds =
-                    nowSeconds + SpindexerConstants.kJamRecoveryCooldownSeconds;
-                jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-                applyVelocityTargets(
-                    spindexerTargetVelocityRotationsPerSecond,
-                    receiverTargetVelocityRotationsPerSecond);
-            } else {
-                applyVelocityTargets(
-                    -spindexerTargetVelocityRotationsPerSecond
-                        * SpindexerConstants.kJamRecoveryReverseScale,
-                    -receiverTargetVelocityRotationsPerSecond
-                        * SpindexerConstants.kJamRecoveryReverseScale);
-            }
-            return;
-        }
-
-        if (shouldStartJamRecovery(nowSeconds)) {
-            jamRecoveryActive = true;
-            jamRecoveryEndTimeSeconds = nowSeconds + SpindexerConstants.kJamRecoverySeconds;
-            applyVelocityTargets(
-                -spindexerTargetVelocityRotationsPerSecond
-                    * SpindexerConstants.kJamRecoveryReverseScale,
-                -receiverTargetVelocityRotationsPerSecond
-                    * SpindexerConstants.kJamRecoveryReverseScale);
-            return;
-        }
-
         applyVelocityTargets(
             spindexerTargetVelocityRotationsPerSecond,
             receiverTargetVelocityRotationsPerSecond);
@@ -188,50 +130,6 @@ public class Spindexer extends SubsystemBase {
         motor.getConfigurator().apply(currentLimitConfigs);
         motor.getConfigurator().apply(slot0Configs);
         motor.getConfigurator().apply(motionMagicConfigs);
-    }
-
-    private boolean shouldStartJamRecovery(double nowSeconds) {
-        double commandedSpeedMagnitude = Math.abs(spindexerTargetVelocityRotationsPerSecond);
-        if (commandedSpeedMagnitude < 1e-6) {
-            jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-            return false;
-        }
-
-        if (commandStartTimeSeconds > 0.0
-                && nowSeconds - commandStartTimeSeconds < SpindexerConstants.kJamDetectionDelaySeconds) {
-            jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-            return false;
-        }
-
-        if (nowSeconds < jamRecoveryCooldownEndTimeSeconds) {
-            jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-            return false;
-        }
-
-        double measuredSpindexerSpeedMagnitude = Math.abs(getSpindexerMeasuredVelocityRotationsPerSecond());
-        double measuredReceiverSpeedMagnitude = Math.abs(getReceiverMeasuredVelocityRotationsPerSecond());
-        double minimumHealthySpeed =
-            commandedSpeedMagnitude * SpindexerConstants.kJamDetectionVelocityRatio;
-
-        boolean lowVelocity =
-            measuredSpindexerSpeedMagnitude < minimumHealthySpeed
-                || measuredReceiverSpeedMagnitude < minimumHealthySpeed;
-        boolean highCurrent =
-            getSpindexerCurrentAmps() >= SpindexerConstants.kJamCurrentThresholdAmps
-                || getReceiverCurrentAmps() >= SpindexerConstants.kJamCurrentThresholdAmps;
-
-        if (!(lowVelocity && highCurrent)) {
-            jamConditionStartTimeSeconds = Double.NEGATIVE_INFINITY;
-            return false;
-        }
-
-        if (jamConditionStartTimeSeconds == Double.NEGATIVE_INFINITY) {
-            jamConditionStartTimeSeconds = nowSeconds;
-            return false;
-        }
-
-        return nowSeconds - jamConditionStartTimeSeconds
-            >= SpindexerConstants.kJamDetectionConfirmSeconds;
     }
 
     private void applyVelocityTargets(

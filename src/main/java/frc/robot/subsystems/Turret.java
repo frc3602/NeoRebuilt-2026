@@ -29,7 +29,7 @@ public class Turret extends SubsystemBase {
         this.drivetrain = drivetrain;
         configureMotor();
         seedStartAngle();
-        setTurretAngleDegrees(TurretConstants.kTurretStartAngleDegrees);
+        // setTurretAngleDegrees(TurretConstants.kTurretStartAngleDegrees);
     }
 
     public double getTurretAngleDegrees() {
@@ -110,6 +110,10 @@ public class Turret extends SubsystemBase {
     }
 
     public Translation2d getCurrentAlignTargetTranslation() {
+        if (DriverStation.isAutonomousEnabled()) {
+            return getCurrentHubTranslation();
+        }
+
         if (isInCenterField()) {
             return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
                 ? FieldConstants.kRedPassCornerPosition
@@ -120,6 +124,10 @@ public class Turret extends SubsystemBase {
     }
 
     public String getAlignTargetMode() {
+        if (DriverStation.isAutonomousEnabled()) {
+            return "Hub";
+        }
+
         return isInCenterField() ? "Pass" : "Hub";
     }
 
