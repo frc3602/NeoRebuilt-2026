@@ -32,6 +32,9 @@ import frc.robot.subsystems.Pivot;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.Turret;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class RobotContainer {
     private static final String kPreferredAutoName = "Basic Center Auto";
@@ -121,14 +124,27 @@ public class RobotContainer {
   }
 
   private void configureAutonomousChooser() {
-    if (AutoBuilder.getAllAutoNames().contains(kPreferredAutoName)) {
-      m_autoChooser.setDefaultOption(kPreferredAutoName, kPreferredAutoName);
+    List<String> autoNames = new ArrayList<>(AutoBuilder.getAllAutoNames());
+    Collections.sort(autoNames);
+
+    if (autoNames.isEmpty()) {
+      m_autoChooser.setDefaultOption("None", "");
+      DriverStation.reportWarning("No PathPlanner autos were found.", false);
       return;
     }
 
-    m_autoChooser.setDefaultOption("None", "");
-    DriverStation.reportWarning(
-        "Preferred auto '" + kPreferredAutoName + "' was not found in PathPlanner autos.", false);
+    if (autoNames.remove(kPreferredAutoName)) {
+      m_autoChooser.setDefaultOption(kPreferredAutoName, kPreferredAutoName);
+    } else {
+      String defaultAutoName = autoNames.remove(0);
+      m_autoChooser.setDefaultOption(defaultAutoName, defaultAutoName);
+      DriverStation.reportWarning(
+          "Preferred auto '" + kPreferredAutoName + "' was not found in PathPlanner autos.", false);
+    }
+
+    for (String autoName : autoNames) {
+      m_autoChooser.addOption(autoName, autoName);
+    }
   }
 
   private void configureNamedCommands() {
@@ -196,6 +212,10 @@ public class RobotContainer {
 
   public Spindexer getSpindexer() {
     return m_spindexer;
+  }
+
+  public SuperStructure getSuperStructure() {
+    return m_superStructure;
   }
 
   public SendableChooser<String> getAutoChooser() {

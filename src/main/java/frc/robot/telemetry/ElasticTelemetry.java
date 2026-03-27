@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotContainer;
+import frc.robot.SuperStructure;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Limelight_Pose;
@@ -47,8 +48,11 @@ public class ElasticTelemetry {
   private final DoublePublisher m_visionXYStdDevPublisher;
   private final DoublePublisher m_visionThetaStdDevPublisher;
   private final StructPublisher<Pose2d> m_visionPosePublisher;
+  private final BooleanPublisher m_autoShooterReadyPublisher;
+  private final BooleanPublisher m_autoTurretAndShooterReadyPublisher;
   private final DoublePublisher m_turretMeasuredAnglePublisher;
   private final DoublePublisher m_turretRequestedAnglePublisher;
+  private final DoublePublisher m_turretAngleErrorPublisher;
   private final BooleanPublisher m_turretAtTargetPublisher;
   private final DoublePublisher m_turretHubAimPublisher;
   private final DoublePublisher m_turretCompensatedAimPublisher;
@@ -59,6 +63,10 @@ public class ElasticTelemetry {
   private final DoublePublisher m_shooterDistancePublisher;
   private final DoublePublisher m_shooterTargetVelocityPublisher;
   private final DoublePublisher m_shooterMeasuredVelocityPublisher;
+  private final DoublePublisher m_shooterVelocityErrorPublisher;
+  private final DoublePublisher m_shooterVelocityMagnitudeErrorPublisher;
+  private final BooleanPublisher m_shooterNearTargetSignedPublisher;
+  private final BooleanPublisher m_shooterNearTargetMagnitudePublisher;
   private final DoublePublisher m_pivotMeasuredAnglePublisher;
   private final DoublePublisher m_pivotSetpointPublisher;
   private final DoublePublisher m_climberPositionPublisher;
@@ -70,12 +78,16 @@ public class ElasticTelemetry {
   private final DoublePublisher m_spindexerMeasuredVelocityPublisher;
   private final DoublePublisher m_receiverTargetVelocityPublisher;
   private final DoublePublisher m_receiverMeasuredVelocityPublisher;
+  private final DoublePublisher m_spindexerCurrentPublisher;
+  private final DoublePublisher m_receiverCurrentPublisher;
+  private final BooleanPublisher m_spindexerFeedingPublisher;
 
   public ElasticTelemetry() {
     NetworkTable elasticTable = NetworkTableInstance.getDefault().getTable("Elastic");
     NetworkTable statusTable = elasticTable.getSubTable("Status");
     NetworkTable driveTable = elasticTable.getSubTable("Drive");
     NetworkTable visionTable = elasticTable.getSubTable("Vision");
+    NetworkTable autoTable = elasticTable.getSubTable("Auto");
     NetworkTable turretTable = elasticTable.getSubTable("Turret");
     NetworkTable shooterTable = elasticTable.getSubTable("Shooter");
     NetworkTable pivotTable = elasticTable.getSubTable("Pivot");
@@ -107,8 +119,12 @@ public class ElasticTelemetry {
     m_visionThetaStdDevPublisher = visionTable.getDoubleTopic("ThetaStdDev").publish();
     m_visionPosePublisher = visionTable.getStructTopic("Pose", Pose2d.struct).publish();
 
+    m_autoShooterReadyPublisher = autoTable.getBooleanTopic("ShooterReady").publish();
+    m_autoTurretAndShooterReadyPublisher = autoTable.getBooleanTopic("TurretAndShooterReady").publish();
+
     m_turretMeasuredAnglePublisher = turretTable.getDoubleTopic("MeasuredAngleDegrees").publish();
     m_turretRequestedAnglePublisher = turretTable.getDoubleTopic("RequestedAngleDegrees").publish();
+    m_turretAngleErrorPublisher = turretTable.getDoubleTopic("AngleErrorDegrees").publish();
     m_turretAtTargetPublisher = turretTable.getBooleanTopic("AtTarget").publish();
     m_turretHubAimPublisher = turretTable.getDoubleTopic("HubAimDegrees").publish();
     m_turretCompensatedAimPublisher = turretTable.getDoubleTopic("CompensatedAimDegrees").publish();
@@ -120,6 +136,10 @@ public class ElasticTelemetry {
     m_shooterDistancePublisher = shooterTable.getDoubleTopic("DistanceToHubMeters").publish();
     m_shooterTargetVelocityPublisher = shooterTable.getDoubleTopic("TargetVelocityRPS").publish();
     m_shooterMeasuredVelocityPublisher = shooterTable.getDoubleTopic("MeasuredVelocityRPS").publish();
+    m_shooterVelocityErrorPublisher = shooterTable.getDoubleTopic("VelocityErrorRPS").publish();
+    m_shooterVelocityMagnitudeErrorPublisher = shooterTable.getDoubleTopic("VelocityMagnitudeErrorRPS").publish();
+    m_shooterNearTargetSignedPublisher = shooterTable.getBooleanTopic("NearTargetSigned").publish();
+    m_shooterNearTargetMagnitudePublisher = shooterTable.getBooleanTopic("NearTargetMagnitude").publish();
 
     m_pivotMeasuredAnglePublisher = pivotTable.getDoubleTopic("MeasuredAngleDegrees").publish();
     m_pivotSetpointPublisher = pivotTable.getDoubleTopic("SetpointAngleDegrees").publish();
@@ -134,6 +154,9 @@ public class ElasticTelemetry {
     m_spindexerMeasuredVelocityPublisher = spindexerTable.getDoubleTopic("SpindexerMeasuredVelocityRPS").publish();
     m_receiverTargetVelocityPublisher = spindexerTable.getDoubleTopic("ReceiverTargetVelocityRPS").publish();
     m_receiverMeasuredVelocityPublisher = spindexerTable.getDoubleTopic("ReceiverMeasuredVelocityRPS").publish();
+    m_spindexerCurrentPublisher = spindexerTable.getDoubleTopic("SpindexerCurrentAmps").publish();
+    m_receiverCurrentPublisher = spindexerTable.getDoubleTopic("ReceiverCurrentAmps").publish();
+    m_spindexerFeedingPublisher = spindexerTable.getBooleanTopic("FeedingCommanded").publish();
   }
 
   public void update(RobotContainer robotContainer) {
@@ -150,6 +173,7 @@ public class ElasticTelemetry {
     Climber climber = robotContainer.getClimber();
     Intake intake = robotContainer.getIntake();
     Spindexer spindexer = robotContainer.getSpindexer();
+    SuperStructure superStructure = robotContainer.getSuperStructure();
     Pose2d pose = drivetrain.getEstimatedPose();
 
     m_robotModePublisher.set(getRobotMode());
@@ -188,11 +212,15 @@ public class ElasticTelemetry {
       m_visionThetaStdDevPublisher.set(Double.NaN);
     }
 
+    m_autoShooterReadyPublisher.set(superStructure.isShooterReadyForShot());
+    m_autoTurretAndShooterReadyPublisher.set(superStructure.isTurretAndShooterReadyForShot());
+
     m_turretMeasuredAnglePublisher.set(turret.getTurretAngleDegrees());
     m_turretRequestedAnglePublisher.set(turret.getRequestedAngleDegrees());
+    m_turretAngleErrorPublisher.set(turret.getAngleErrorDegrees());
     m_turretAtTargetPublisher.set(turret.atTarget());
     m_turretHubAimPublisher.set(turret.calculateHubAimAngleDegrees());
-    m_turretCompensatedAimPublisher.set(turret.calculateCompensatedAlignAngleDegrees());
+    m_turretCompensatedAimPublisher.set(turret.calculateCompensatedHubAimAngleDegrees());
     m_turretCenterFieldPublisher.set(turret.isInCenterField());
     m_turretAlignModePublisher.set(turret.getAlignTargetMode());
     m_turretAlignTargetXPublisher.set(turret.getCurrentAlignTargetTranslation().getX());
@@ -201,6 +229,14 @@ public class ElasticTelemetry {
     m_shooterDistancePublisher.set(shooter.getDistanceToHubMeters());
     m_shooterTargetVelocityPublisher.set(shooter.getTargetVelocityRotationsPerSecond());
     m_shooterMeasuredVelocityPublisher.set(shooter.getMeasuredVelocityRotationsPerSecond());
+    m_shooterVelocityErrorPublisher.set(
+        shooter.getMeasuredVelocityRotationsPerSecond()
+            - shooter.getTargetVelocityRotationsPerSecond());
+    m_shooterVelocityMagnitudeErrorPublisher.set(
+        Math.abs(shooter.getMeasuredVelocityRotationsPerSecond())
+            - Math.abs(shooter.getTargetVelocityRotationsPerSecond()));
+    m_shooterNearTargetSignedPublisher.set(superStructure.isShooterNearTargetVelocitySigned());
+    m_shooterNearTargetMagnitudePublisher.set(superStructure.isShooterReadyForShot());
 
     m_pivotMeasuredAnglePublisher.set(pivot.getRightPosition());
     m_pivotSetpointPublisher.set(pivot.getPivotSetpointDegrees());
@@ -215,6 +251,11 @@ public class ElasticTelemetry {
     m_spindexerMeasuredVelocityPublisher.set(spindexer.getSpindexerMeasuredVelocityRotationsPerSecond());
     m_receiverTargetVelocityPublisher.set(spindexer.getReceiverTargetVelocityRotationsPerSecond());
     m_receiverMeasuredVelocityPublisher.set(spindexer.getReceiverMeasuredVelocityRotationsPerSecond());
+    m_spindexerCurrentPublisher.set(spindexer.getSpindexerCurrentAmps());
+    m_receiverCurrentPublisher.set(spindexer.getReceiverCurrentAmps());
+    m_spindexerFeedingPublisher.set(
+        Math.abs(spindexer.getSpindexerTargetVelocityRotationsPerSecond()) > 1e-6
+            || Math.abs(spindexer.getReceiverTargetVelocityRotationsPerSecond()) > 1e-6);
   }
 
   private String getRobotMode() {

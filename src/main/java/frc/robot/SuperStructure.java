@@ -63,8 +63,7 @@ public class SuperStructure {
             Commands.runEnd(
                 () -> {
                     if (!hasStartedFeeding[0]
-                            && turret.atTarget()
-                            && shooter.isNearTargetVelocity(kTrackedShotReadyToleranceRotationsPerSecond)) {
+                            && isTurretAndShooterReadyForShot()) {
                         hasStartedFeeding[0] = true;
                     }
 
@@ -95,16 +94,24 @@ public class SuperStructure {
         return shootTrackedLerpShot();
     }
 
+    public boolean isShooterReadyForShot() {
+        return shooter.isNearTargetVelocityMagnitude(kTrackedShotReadyToleranceRotationsPerSecond);
+    }
+
+    public boolean isTurretAndShooterReadyForShot() {
+        return turret.atTarget() && isShooterReadyForShot();
+    }
+
+    public boolean isShooterNearTargetVelocitySigned() {
+        return shooter.isNearTargetVelocity(kTrackedShotReadyToleranceRotationsPerSecond);
+    }
+
     public boolean isTrackedLerpShotReady() {
-        return turret.atTarget()
-            && shooter.isNearTargetVelocity(kTrackedShotReadyToleranceRotationsPerSecond);
+        return isTurretAndShooterReadyForShot();
     }
 
     public boolean isTrackedLerpShotFeedReady() {
-        return Math.abs(
-            Math.abs(shooter.getMeasuredVelocityRotationsPerSecond())
-                - Math.abs(shooter.getTargetVelocityRotationsPerSecond()))
-            <= kTrackedShotReadyToleranceRotationsPerSecond;
+        return isShooterReadyForShot();
     }
 
     public Command shootTrackedLerpShot() {
@@ -204,9 +211,7 @@ public class SuperStructure {
     public Command autonShootFailsafeShot() {
         return Commands.sequence(
             autonPrepareFailsafeShot(),
-            Commands.waitUntil(
-                () -> turret.atTarget()
-                    && shooter.isNearTargetVelocity(kTrackedShotReadyToleranceRotationsPerSecond)),
+            Commands.waitUntil(this::isTurretAndShooterReadyForShot),
             autonFeedShot());
     }
 

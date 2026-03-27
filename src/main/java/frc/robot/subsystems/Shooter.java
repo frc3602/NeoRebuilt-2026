@@ -62,6 +62,13 @@ public class Shooter extends SubsystemBase {
             <= toleranceRotationsPerSecond;
     }
 
+    public boolean isNearTargetVelocityMagnitude(double toleranceRotationsPerSecond) {
+        return Math.abs(
+            Math.abs(getMeasuredVelocityRotationsPerSecond())
+                - Math.abs(targetVelocityRotationsPerSecond))
+            <= toleranceRotationsPerSecond;
+    }
+
     public void setVelocityRotationsPerSecond(double targetVelocityRotationsPerSecond) {
         this.targetVelocityRotationsPerSecond = Math.min(
             targetVelocityRotationsPerSecond,

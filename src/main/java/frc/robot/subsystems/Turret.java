@@ -49,6 +49,10 @@ public class Turret extends SubsystemBase {
             <= TurretConstants.kTurretPositionToleranceDegrees;
     }
 
+    public double getAngleErrorDegrees() {
+        return requestedUnwrappedAngleDegrees - getTurretUnwrappedAngleDegrees();
+    }
+
     public void setTurretAngleDegrees(double targetAngleDegrees) {
         requestedAngleDegrees = normalizeSignedAngleDegrees(targetAngleDegrees);
         requestedUnwrappedAngleDegrees =
