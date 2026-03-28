@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
-import frc.robot.Constants.TurretConstants;
 
 public class Shooter extends SubsystemBase {
     private final TalonFX shooterLeader = new TalonFX(ShooterConstants.kShooterMotor1ID);
@@ -70,9 +69,12 @@ public class Shooter extends SubsystemBase {
     }
 
     public void setVelocityRotationsPerSecond(double targetVelocityRotationsPerSecond) {
-        this.targetVelocityRotationsPerSecond = Math.min(
-            targetVelocityRotationsPerSecond,
+        double targetVelocityMagnitudeRotationsPerSecond = Math.min(
+            Math.abs(targetVelocityRotationsPerSecond),
             ShooterConstants.kShooterCommandMaxVelocityRotationsPerSecond);
+        this.targetVelocityRotationsPerSecond = Math.copySign(
+            targetVelocityMagnitudeRotationsPerSecond,
+            targetVelocityRotationsPerSecond);
         shooterLeader.setControl(
             velocityRequest.withVelocity(this.targetVelocityRotationsPerSecond));
         shooterFollower.setControl(followerRequest);
@@ -134,9 +136,7 @@ public class Shooter extends SubsystemBase {
     }
 
     private double calculateBallTimeOfFlightSeconds(double distanceMeters) {
-        return Math.max(
-            ShooterConstants.kShooterMinimumLookaheadSeconds,
-            distanceMeters / TurretConstants.kTurretProjectileSpeedMetersPerSecond);
+        return ShooterConstants.ballTimeOfFlightSecondsForDistanceMeters(distanceMeters);
     }
 
     private void configureMotor(TalonFX motor) {
@@ -151,12 +151,12 @@ public class Shooter extends SubsystemBase {
         feedbackConfigs.SensorToMechanismRatio = ShooterConstants.kShooterSensorToMechanismRatio;
 
         var slot0Configs = new Slot0Configs();
-        slot0Configs.kP = ShooterConstants.kShooterVelocityKP;
-        slot0Configs.kI = ShooterConstants.kShooterVelocityKI;
-        slot0Configs.kD = ShooterConstants.kShooterVelocityKD;
-        slot0Configs.kS = ShooterConstants.kShooterVelocityKS;
-        slot0Configs.kV = ShooterConstants.kShooterVelocityKV;
-        slot0Configs.kA = ShooterConstants.kShooterVelocityKA;
+        slot0Configs.kS = 0.25;
+        slot0Configs.kV = 0.39;
+        slot0Configs.kA = 0.0;
+        slot0Configs.kP = 0.11;
+        slot0Configs.kI = 0.0;
+        slot0Configs.kD = 0.0;
 
         var motionMagicConfigs = new MotionMagicConfigs();
         motionMagicConfigs.MotionMagicAcceleration =

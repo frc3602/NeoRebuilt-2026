@@ -7,25 +7,25 @@
         {
           "type": "named",
           "data": {
-            "name": "AutonRunIntake"
+            "name": "DropPivot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ClimberDown"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Center Backup Path"
+            "pathName": "Center Tower"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "AutonShootTrackedShot"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "AutonFeedShot"
+            "name": "ClimberUP"
           }
         }
       ]

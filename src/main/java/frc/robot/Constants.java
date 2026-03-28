@@ -6,52 +6,142 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 
 public final class Constants {
     private Constants() {}
 
     public static final class ShooterConstants {
+        private static final double kLegacyShooterCommandMaxVelocityRotationsPerSecond = 95.0;
+        private static final double kLegacyShooterVelocityKP = 0.11;
+        private static final double kLegacyShooterVelocityKI = 0.0;
+        private static final double kLegacyShooterVelocityKD = 0.0;
+        private static final double kLegacyShooterVelocityKS = 0.25;
+        private static final double kLegacyShooterVelocityKV = 0.19;
+        private static final double kLegacyShooterVelocityKA = 0.0;
+        private static final double kLegacyShooterAccelerationRotationsPerSecondSquared = 600.0;
+        private static final double kLegacyShooterJerkRotationsPerSecondCubed = 6000.0;
+        private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
+        private static final double kOverallShotVelocityScale = 1.08;
+        private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond =
+            44.0 * kOverallShotVelocityScale;
+        private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond =
+            legacyMotorRpsToMechanismRps(kLegacyShooterCommandMaxVelocityRotationsPerSecond);
+        private static final double kShooterGravityMetersPerSecondSquared = 9.80665;
+        private static final double kShooterLaunchAngleRadians = Math.toRadians(66.0);
+        private static final double kShooterLaunchCosine = Math.cos(kShooterLaunchAngleRadians);
+        private static final double kShooterLaunchTangent = Math.tan(kShooterLaunchAngleRadians);
+
         //Motor ID
         public static final int kShooterMotor1ID = 5;
         public static final int kShooterMotor2ID = 6;
 
         // Legacy percent output and nominal closed-loop reference speed
         public static final double kShooterSpeed = .75;
-        public static final double kShooterTargetVelocityRotationsPerSecond = -95.0;
-        public static final double kShooterCommandMaxVelocityRotationsPerSecond = 95.0;
         public static final double kShooterSensorToMechanismRatio = 22.0 / 18.0;
+        public static final double kShooterTargetVelocityRotationsPerSecond =
+            -kReferenceShotVelocityMagnitudeRotationsPerSecond;
+        public static final double kShooterCommandMaxVelocityRotationsPerSecond = 95.0;
 
         public static final double kShooterCurrentLimit = 60.0;
-        public static final double kShooterVelocityKP = 0.11;
-        public static final double kShooterVelocityKI = 0.0;
-        public static final double kShooterVelocityKD = 0.0;
-        public static final double kShooterVelocityKS = 0.25;
-        public static final double kShooterVelocityKV = 0.19;
-        public static final double kShooterVelocityKA = 0.0;
-        public static final double kShooterAccelerationRotationsPerSecondSquared = 600.0;
-        public static final double kShooterJerkRotationsPerSecondCubed = 6000.0;
+        public static final double kShooterVelocityKP =
+            legacyVelocityGainToMechanismUnits(kLegacyShooterVelocityKP);
+        public static final double kShooterVelocityKI =
+            legacyVelocityGainToMechanismUnits(kLegacyShooterVelocityKI);
+        public static final double kShooterVelocityKD =
+            legacyVelocityGainToMechanismUnits(kLegacyShooterVelocityKD);
+        public static final double kShooterVelocityKS = kLegacyShooterVelocityKS;
+        public static final double kShooterVelocityKV =
+            legacyVelocityGainToMechanismUnits(kLegacyShooterVelocityKV);
+        public static final double kShooterVelocityKA =
+            legacyVelocityGainToMechanismUnits(kLegacyShooterVelocityKA);
+        public static final double kShooterAccelerationRotationsPerSecondSquared =
+            legacyMotorRpsToMechanismRps(kLegacyShooterAccelerationRotationsPerSecondSquared);
+        public static final double kShooterJerkRotationsPerSecondCubed =
+            legacyMotorRpsToMechanismRps(kLegacyShooterJerkRotationsPerSecondCubed);
 
-        // Distance-to-speed placeholder model for later calibration.
-        public static final double kReferenceShotDistanceMeters = 3.0;
-        public static final double kShooterMinVelocityRotationsPerSecond = -130.0;
-        public static final double kShooterMaxVelocityRotationsPerSecond = -70.0;
-        public static final double kShooterVelocitySlopeRotationsPerSecondPerMeter = -9.0;
+        public static final double kShooterExitHeightMeters = Units.inchesToMeters(20.5);
+        public static final double kHubCenterHeightMeters = Units.inchesToMeters(72.0);
+        public static final double kShooterLaunchAngleDegrees = 66.0;
+        public static final double kReferenceShotDistanceMeters = 2.98;
         public static final double kShooterMinimumLookaheadSeconds = 0.05;
+        public static final double kReferenceShotLaunchVelocityMetersPerSecond =
+            idealLaunchVelocityMetersPerSecondForDistanceMeters(kReferenceShotDistanceMeters);
+        public static final double kShooterExitSpeedMetersPerSecondPerRotationPerSecond =
+            kReferenceShotLaunchVelocityMetersPerSecond
+                / kReferenceShotVelocityMagnitudeRotationsPerSecond;
 
         //Failsafe Speed
-        public static final double kShooterFailsafeSpeed = 37.5;
-        public static final double kShooterReverseVelocityRotationsPerSecond = 37.5;
+        public static final double kShooterFailsafeSpeed =
+            legacyMotorRpsToMechanismRps(kLegacyShooterFailsafeVelocityRotationsPerSecond)
+                * kOverallShotVelocityScale;
+        public static final double kShooterReverseVelocityRotationsPerSecond =
+            legacyMotorRpsToMechanismRps(kLegacyShooterFailsafeVelocityRotationsPerSecond);
 
         public static double velocityForDistanceMeters(double distanceMeters) {
-            double targetVelocity = kShooterTargetVelocityRotationsPerSecond
-                + (distanceMeters - kReferenceShotDistanceMeters)
-                    * kShooterVelocitySlopeRotationsPerSecondPerMeter;
-            return MathUtil.clamp(
-                targetVelocity,
-                kShooterMinVelocityRotationsPerSecond,
-                kShooterMaxVelocityRotationsPerSecond);
+            return -shooterVelocityMagnitudeForDistanceMeters(distanceMeters);
+        }
+
+        public static double ballTimeOfFlightSecondsForDistanceMeters(double distanceMeters) {
+            double launchVelocityMetersPerSecond =
+                launchVelocityMetersPerSecondForDistanceMeters(distanceMeters);
+            double horizontalVelocityMetersPerSecond =
+                launchVelocityMetersPerSecond * kShooterLaunchCosine;
+
+            if (horizontalVelocityMetersPerSecond <= 1e-6) {
+                return kShooterMinimumLookaheadSeconds;
+            }
+
+            return Math.max(
+                kShooterMinimumLookaheadSeconds,
+                distanceMeters / horizontalVelocityMetersPerSecond);
+        }
+
+        public static double launchVelocityMetersPerSecondForDistanceMeters(double distanceMeters) {
+            return shooterVelocityMagnitudeForDistanceMeters(distanceMeters)
+                * kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
+        }
+
+        private static double legacyMotorRpsToMechanismRps(double legacyMotorRps) {
+            return legacyMotorRps / kShooterSensorToMechanismRatio;
+        }
+
+        private static double legacyVelocityGainToMechanismUnits(double legacyGain) {
+            return legacyGain * kShooterSensorToMechanismRatio;
+        }
+
+        private static double shooterVelocityMagnitudeForDistanceMeters(double distanceMeters) {
+            double idealLaunchVelocityMetersPerSecond =
+                idealLaunchVelocityMetersPerSecondForDistanceMeters(distanceMeters);
+
+            if (!Double.isFinite(idealLaunchVelocityMetersPerSecond)
+                    || idealLaunchVelocityMetersPerSecond <= 0.0) {
+                return kReferenceShotVelocityMagnitudeRotationsPerSecond;
+            }
+
+            return idealLaunchVelocityMetersPerSecond
+                / kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
+        }
+
+        private static double idealLaunchVelocityMetersPerSecondForDistanceMeters(
+                double distanceMeters) {
+            double heightDeltaMeters = kHubCenterHeightMeters - kShooterExitHeightMeters;
+            double denominator =
+                2.0
+                    * kShooterLaunchCosine
+                    * kShooterLaunchCosine
+                    * ((distanceMeters * kShooterLaunchTangent) - heightDeltaMeters);
+
+            if (distanceMeters <= 0.0 || denominator <= 1e-6) {
+                return Double.NaN;
+            }
+
+            return Math.sqrt(
+                kShooterGravityMetersPerSecondSquared
+                    * distanceMeters
+                    * distanceMeters
+                    / denominator);
         }
     }
 
@@ -87,10 +177,9 @@ public final class Constants {
         //Motor ID
         public static final int kIntakeMotorID = 8;
         public static final int kPivotLeaderMotorID = 13;
-        public static final int kPivotFollowerMotorID = 14;
+        public static final int kPivotFollowerMotorID = 14;  
 
         // Intake roller Motion Magic velocity tuning
-        public static final double kIntakeCurrentLimit = 40.0;
         public static final double kIntakeForwardVelocityRotationsPerSecond = -70.0;
         public static final double kIntakeReverseVelocityRotationsPerSecond = 70.0;
         public static final double kIntakeVelocityKP = 0.12;
@@ -152,9 +241,11 @@ public final class Constants {
         public static final double kSpindexerSpeedRatioToShooter = 0.45;
         public static final double kReceiverSpeedRatioToShooter = 0.60;
         public static final double kSpindexerVelocityRotationsPerSecond =
-            ShooterConstants.kShooterTargetVelocityRotationsPerSecond * kSpindexerSpeedRatioToShooter;
+            -ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
+                * kSpindexerSpeedRatioToShooter;
         public static final double kReceiverVelocityRotationsPerSecond =
-            ShooterConstants.kShooterTargetVelocityRotationsPerSecond * kReceiverSpeedRatioToShooter;
+            -ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
+                * kReceiverSpeedRatioToShooter;
 
         public static final double kSpindexerCurrentLimit = 40.0;
         public static final double kReceiverCurrentLimit = 40.0;

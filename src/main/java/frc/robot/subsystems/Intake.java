@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -66,10 +65,6 @@ public class Intake extends SubsystemBase {
         var motorOutputConfigs = new MotorOutputConfigs();
         motorOutputConfigs.NeutralMode = NeutralModeValue.Brake;
 
-        var currentLimitConfigs = new CurrentLimitsConfigs();
-        currentLimitConfigs.StatorCurrentLimit = IntakeConstants.kIntakeCurrentLimit;
-        currentLimitConfigs.StatorCurrentLimitEnable = true;
-
         var slot0Configs = new Slot0Configs();
         slot0Configs.kP = IntakeConstants.kIntakeVelocityKP;
         slot0Configs.kI = IntakeConstants.kIntakeVelocityKI;
@@ -85,7 +80,6 @@ public class Intake extends SubsystemBase {
             IntakeConstants.kIntakeJerkRotationsPerSecondCubed;
 
         intakeMotor.getConfigurator().apply(motorOutputConfigs);
-        intakeMotor.getConfigurator().apply(currentLimitConfigs);
         intakeMotor.getConfigurator().apply(slot0Configs);
         intakeMotor.getConfigurator().apply(motionMagicConfigs);
     }

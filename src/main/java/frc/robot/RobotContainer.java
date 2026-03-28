@@ -38,6 +38,8 @@ import java.util.List;
 
 public class RobotContainer {
     private static final String kPreferredAutoName = "Basic Center Auto";
+    private static final String kClimbAutoName = "Climb Auto";
+    private static final String kShootTestAutoName = "Shoot Test";
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second                                                                             // max angular velocity
     private final SwerveRequest.FieldCentric drive =
@@ -77,7 +79,7 @@ public class RobotContainer {
 
       m_drivetrain.setDefaultCommand(
                 // Drivetrain will execute this command periodically
-                m_drivetrain.applyRequest(() -> drive.withVelocityX(m_driverController.getLeftY() * MaxSpeed) // Drive forward with
+                m_drivetrain.applyRequest(() -> drive.withVelocityX(-m_driverController.getLeftY() * MaxSpeed) // Drive forward with
                                                                                                   // negative Y
                                                                                                   // (forward)
                         .withVelocityY(-m_driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
@@ -124,26 +126,46 @@ public class RobotContainer {
   }
 
   private void configureAutonomousChooser() {
-    List<String> autoNames = new ArrayList<>(AutoBuilder.getAllAutoNames());
-    Collections.sort(autoNames);
+    List<String> availableAutoNames = new ArrayList<>(AutoBuilder.getAllAutoNames());
+    Collections.sort(availableAutoNames);
+    List<String> chooserAutoNames = new ArrayList<>();
 
-    if (autoNames.isEmpty()) {
+    if (availableAutoNames.isEmpty()) {
       m_autoChooser.setDefaultOption("None", "");
       DriverStation.reportWarning("No PathPlanner autos were found.", false);
       return;
     }
 
-    if (autoNames.remove(kPreferredAutoName)) {
+    if (availableAutoNames.remove(kPreferredAutoName)) {
       m_autoChooser.setDefaultOption(kPreferredAutoName, kPreferredAutoName);
+      chooserAutoNames.add(kPreferredAutoName);
     } else {
-      String defaultAutoName = autoNames.remove(0);
+      String defaultAutoName = availableAutoNames.remove(0);
       m_autoChooser.setDefaultOption(defaultAutoName, defaultAutoName);
+      chooserAutoNames.add(defaultAutoName);
       DriverStation.reportWarning(
           "Preferred auto '" + kPreferredAutoName + "' was not found in PathPlanner autos.", false);
     }
 
-    for (String autoName : autoNames) {
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kClimbAutoName);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kShootTestAutoName);
+  }
+
+  private void addRequestedAutoOption(
+      List<String> availableAutoNames, List<String> chooserAutoNames, String autoName) {
+    if (chooserAutoNames.contains(autoName)) {
+      return;
+    }
+
+    if (availableAutoNames.remove(autoName)) {
       m_autoChooser.addOption(autoName, autoName);
+      chooserAutoNames.add(autoName);
+      return;
+    }
+
+    if (!kPreferredAutoName.equals(autoName)) {
+      DriverStation.reportWarning(
+          "Requested chooser auto '" + autoName + "' was not found in PathPlanner autos.", false);
     }
   }
 
@@ -166,6 +188,8 @@ public class RobotContainer {
     NamedCommands.registerCommand("RaisePivot", m_superStructure.raisePivot());
     NamedCommands.registerCommand("RunIntake", m_superStructure.runIntake());
     NamedCommands.registerCommand("StopIntake", m_superStructure.stopIntake());
+    NamedCommands.registerCommand("ClimberUp", m_climber.raiseCommand());
+    NamedCommands.registerCommand("ClimberDown", m_climber.lowerCommand());
 
     NamedCommands.registerCommand(
         "AutonPrepareTrackedShot", m_superStructure.autonPrepareTrackedShot());

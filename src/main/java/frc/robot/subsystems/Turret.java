@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.TurretConstants;
 
 public class Turret extends SubsystemBase {
@@ -102,9 +103,7 @@ public class Turret extends SubsystemBase {
     }
 
     public double calculateBallTimeOfFlightSeconds(double distanceMeters) {
-        return Math.max(
-            TurretConstants.kTurretMinimumLookaheadSeconds,
-            distanceMeters / TurretConstants.kTurretProjectileSpeedMetersPerSecond);
+        return ShooterConstants.ballTimeOfFlightSecondsForDistanceMeters(distanceMeters);
     }
 
     public boolean isInCenterField() {

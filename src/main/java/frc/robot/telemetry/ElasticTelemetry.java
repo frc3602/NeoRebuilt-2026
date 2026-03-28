@@ -1,6 +1,7 @@
 package frc.robot.telemetry;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
@@ -61,6 +62,7 @@ public class ElasticTelemetry {
   private final DoublePublisher m_turretAlignTargetXPublisher;
   private final DoublePublisher m_turretAlignTargetYPublisher;
   private final DoublePublisher m_shooterDistancePublisher;
+  private final DoublePublisher m_shooterDistanceFeetPublisher;
   private final DoublePublisher m_shooterTargetVelocityPublisher;
   private final DoublePublisher m_shooterMeasuredVelocityPublisher;
   private final DoublePublisher m_shooterVelocityErrorPublisher;
@@ -134,6 +136,7 @@ public class ElasticTelemetry {
     m_turretAlignTargetYPublisher = turretTable.getDoubleTopic("AlignTargetYMeters").publish();
 
     m_shooterDistancePublisher = shooterTable.getDoubleTopic("DistanceToHubMeters").publish();
+    m_shooterDistanceFeetPublisher = shooterTable.getDoubleTopic("DistanceToHubFeet").publish();
     m_shooterTargetVelocityPublisher = shooterTable.getDoubleTopic("TargetVelocityRPS").publish();
     m_shooterMeasuredVelocityPublisher = shooterTable.getDoubleTopic("MeasuredVelocityRPS").publish();
     m_shooterVelocityErrorPublisher = shooterTable.getDoubleTopic("VelocityErrorRPS").publish();
@@ -226,7 +229,9 @@ public class ElasticTelemetry {
     m_turretAlignTargetXPublisher.set(turret.getCurrentAlignTargetTranslation().getX());
     m_turretAlignTargetYPublisher.set(turret.getCurrentAlignTargetTranslation().getY());
 
-    m_shooterDistancePublisher.set(shooter.getDistanceToHubMeters());
+    double shooterDistanceMeters = shooter.getDistanceToHubMeters();
+    m_shooterDistancePublisher.set(shooterDistanceMeters);
+    m_shooterDistanceFeetPublisher.set(Units.metersToFeet(shooterDistanceMeters));
     m_shooterTargetVelocityPublisher.set(shooter.getTargetVelocityRotationsPerSecond());
     m_shooterMeasuredVelocityPublisher.set(shooter.getMeasuredVelocityRotationsPerSecond());
     m_shooterVelocityErrorPublisher.set(

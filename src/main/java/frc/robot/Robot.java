@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.telemetry.AutonFieldPreview;
 import frc.robot.telemetry.ElasticTelemetry;
+import frc.robot.telemetry.RobotPoseFieldView;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
@@ -20,11 +21,13 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
   private final ElasticTelemetry m_elasticTelemetry;
   private final AutonFieldPreview m_autonFieldPreview;
+  private final RobotPoseFieldView m_robotPoseFieldView;
 
   public Robot() {
     m_robotContainer = new RobotContainer();
     m_elasticTelemetry = new ElasticTelemetry();
     m_autonFieldPreview = new AutonFieldPreview(m_robotContainer.getAutoChooser());
+    m_robotPoseFieldView = new RobotPoseFieldView();
   }
 
   @Override
@@ -40,6 +43,7 @@ public class Robot extends TimedRobot {
     m_elasticTelemetry.update(m_robotContainer);
     m_autonFieldPreview.update(
         m_robotContainer.getDrivetrain(), m_robotContainer.getSelectedAutoName());
+    m_robotPoseFieldView.update(m_robotContainer.getDrivetrain());
   }
 
   @Override

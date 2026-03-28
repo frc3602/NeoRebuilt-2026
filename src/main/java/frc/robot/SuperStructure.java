@@ -14,7 +14,8 @@ public class SuperStructure {
     private static final double kFailsafeShooterVelocityRotationsPerSecond =
         ShooterConstants.kShooterTargetVelocityRotationsPerSecond;
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 5.0;
-    private static final double kAutonFeedTimeSeconds = 0.35;
+    private static final double kTrackedShotFeedDelaySeconds = 0.50;
+    private static final double kAutonFeedTimeSeconds = 3.5;
     private static final double kAutonIntakeTimeSeconds = 1.0;
 
     private final Turret turret;
@@ -115,25 +116,14 @@ public class SuperStructure {
     }
 
     public Command shootTrackedLerpShot() {
-        final boolean[] hasStartedFeeding = {false};
         return Commands.parallel(
             turret.aimAtHubWithMotionCompCommand(),
             shooter.runDistanceBasedVelocityCommand(),
-            Commands.runEnd(
-                () -> {
-                    if (!hasStartedFeeding[0] && isTrackedLerpShotFeedReady()) {
-                        hasStartedFeeding[0] = true;
-                    }
-
-                    if (hasStartedFeeding[0]) {
-                        spindexer.feedForward();
-                    }
-                },
-                () -> {
-                    hasStartedFeeding[0] = false;
-                    spindexer.stop();
-                },
-                spindexer));
+            Commands.sequence(
+                Commands.waitUntil(this::isTrackedLerpShotFeedReady),
+                Commands.waitSeconds(kTrackedShotFeedDelaySeconds),
+                Commands.run(spindexer::feedForward, spindexer)))
+            .finallyDo(spindexer::stop);
     }
 
     public Command fixedShotCommand(double shooterVelocityRotationsPerSecond) {
@@ -191,27 +181,39 @@ public class SuperStructure {
     }
 
     public Command autonWaitForTrackedShotReady() {
-        return Commands.waitUntil(this::isTrackedLerpShotReady);
+        return Commands.sequence(
+            Commands.waitUntil(this::isTrackedLerpShotFeedReady),
+            Commands.waitSeconds(kTrackedShotFeedDelaySeconds));
     }
 
     public Command autonFeedShot() {
-        return Commands.sequence(
-            spindexer.feedForwardCommand(),
+        return Commands.deadline(
             Commands.waitSeconds(kAutonFeedTimeSeconds),
-            spindexer.stopCommand());
+            Commands.run(spindexer::feedForward, spindexer))
+            .finallyDo(spindexer::stop);
     }
 
     public Command autonShootTrackedShot() {
         return Commands.sequence(
-            autonPrepareTrackedShot(),
-            autonWaitForTrackedShotReady(),
-            autonFeedShot());
+            Commands.deadline(
+                autonWaitForTrackedShotReady(),
+                turret.aimAtHubWithMotionCompCommand(),
+                Commands.run(shooter::updateVelocityForCurrentDistance, shooter)),
+            Commands.deadline(
+                Commands.waitSeconds(kAutonFeedTimeSeconds),
+                turret.aimAtHubWithMotionCompCommand(),
+                Commands.run(shooter::updateVelocityForCurrentDistance, shooter),
+                Commands.run(spindexer::feedForward, spindexer))
+                .finallyDo(() -> {
+                    spindexer.stop();
+                    shooter.stop();
+                }));
     }
 
     public Command autonShootFailsafeShot() {
         return Commands.sequence(
             autonPrepareFailsafeShot(),
-            Commands.waitUntil(this::isTurretAndShooterReadyForShot),
+            Commands.waitUntil(this::isShooterReadyForShot),
             autonFeedShot());
     }
 
