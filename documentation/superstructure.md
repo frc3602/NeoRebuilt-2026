@@ -8,14 +8,14 @@ It exists to keep button bindings and autonomous sequences readable.
 
 ### `manualFeedReverse()`
 
-- Reverses the feed path at a fixed manual velocity.
+- Reverses the shooter, feed path, and intake at fixed manual velocities.
 
 ### `shootFailsafe()`
 
-- Runs the fixed fallback shot while held.
+- Runs the fallback shot while held.
 - Commands:
   - rear turret preset
-  - fixed shooter speed
+  - fixed shooter target velocity
   - automatic spindexer feed once turret and shooter are ready
 
 ### `prepareFailsafeShot()`
@@ -29,7 +29,8 @@ It exists to keep button bindings and autonomous sequences readable.
 
 ### `trackAllianceTower()`
 
-- Runs the turret align command continuously.
+- Currently acts as a legacy alias for the full tracked-shot command.
+- It does not only move the turret.
 
 ### `isTrackedLerpShotReady()`
 
@@ -37,13 +38,18 @@ It exists to keep button bindings and autonomous sequences readable.
   - turret is at target
   - shooter is close to its active target velocity
 
+### `isTrackedLerpShotFeedReady()`
+
+- Returns true when the shooter is close to its active target velocity.
+- In the current code, this feed gate does not also require the turret to be at target.
+
 ### `shootTrackedLerpShot()`
 
 - Runs the tracked shot while held.
 - Commands:
-  - turret align
+  - turret alignment with motion compensation
   - distance-based shooter speed
-  - automatic spindexer feed once ready
+  - automatic spindexer feed after the shooter-ready gate and fixed feed delay
 
 ### `fixedShotCommand(double shooterVelocityRotationsPerSecond)`
 
@@ -60,6 +66,7 @@ It exists to keep button bindings and autonomous sequences readable.
 - `turretLeftCornerPreset()`
 - `turretRightCornerPreset()`
 - `dropPivot()`
+- `raisePivot()`
 - `runIntake()`
 - `stopIntake()`
 
@@ -67,34 +74,35 @@ It exists to keep button bindings and autonomous sequences readable.
 
 ### `autonPrepareTrackedShot()`
 
-- One-shot auton setup for a tracked shot:
+- One-shot autonomous setup for a tracked shot:
   - align turret once
   - update shooter speed once from distance
 
 ### `autonPrepareFailsafeShot()`
 
-- One-shot auton setup for a fixed failsafe shot.
+- One-shot autonomous setup for a fixed fallback shot.
 
 ### `autonWaitForTrackedShotReady()`
 
-- Waits until the tracked shot is ready.
+- Waits for the tracked-shot feed gate, then waits the fixed feed delay.
+- In the current code, that feed gate is based on shooter readiness, not turret-at-target.
 
 ### `autonFeedShot()`
 
-- Feeds a shot for a fixed amount of time, then stops the spindexer.
+- Feeds fuel for a fixed amount of time, then stops the spindexer.
 
 ### `autonShootTrackedShot()`
 
 - Full autonomous tracked shot sequence:
-  - prepare
-  - wait ready
-  - feed
+  - keep aiming
+  - wait for the feed gate
+  - feed for a fixed time
 
 ### `autonShootFailsafeShot()`
 
 - Full autonomous failsafe shot sequence:
   - prepare
-  - wait ready
+  - wait for shooter readiness
   - feed
 
 ### `autonRunIntake()`
@@ -104,7 +112,7 @@ It exists to keep button bindings and autonomous sequences readable.
 ### `autonIntakeAndStage()`
 
 - Starts pivot drop, intake, and spindexer together.
-- Intended for continuous note collection/staging until interrupted.
+- Intended for continuous fuel collection and staging until interrupted.
 
 ### `autonStopGamePiecePath()`
 

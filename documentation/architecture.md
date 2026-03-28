@@ -2,7 +2,7 @@
 
 ## Overview
 
-The robot code is organized around a small set of mechanism subsystems plus one coordinating class:
+The robot code is organized around a small set of subsystems plus one coordinating class:
 
 - `Drivetrain`
 - `Turret`
@@ -10,12 +10,17 @@ The robot code is organized around a small set of mechanism subsystems plus one 
 - `Pivot`
 - `Intake`
 - `Spindexer`
+- `Climber`
 - `Limelight_Pose`
 - `SuperStructure`
 
-`RobotContainer` creates the shared subsystem objects, binds controller buttons, and owns the auto chooser.
+`RobotContainer` creates the shared subsystem objects, binds controller buttons, registers PathPlanner named commands, and owns the autonomous chooser.
 
-`Robot` runs the command scheduler and pushes telemetry to Elastic.
+`Robot` runs the command scheduler and updates:
+
+- `ElasticTelemetry`
+- `AutonFieldPreview`
+- `RobotPoseFieldView`
 
 ## Major Roles
 
@@ -24,24 +29,25 @@ The robot code is organized around a small set of mechanism subsystems plus one 
 - Owns the CTRE swerve drivetrain.
 - Provides the estimated robot pose used by turret aiming, shooter distance calculation, and autonomous.
 - Configures PathPlanner.
+- Fuses accepted Limelight measurements into the pose estimator.
 
 ### `Turret`
 
 - Uses Motion Magic position control.
 - Aims robot-relative with:
   - `0` = front
+  - `180` = rear
   - positive = clockwise
   - negative = counterclockwise
-  - `180` = rear
 - Avoids crossing through the front seam when choosing a movement path.
-- Can aim at the hub using pose, translational lead, and rotational lead.
+- Can aim at the alliance tower from pose with translational and rotational lead.
 - Can switch to an alliance pass corner while in center field.
 
 ### `Shooter`
 
 - Uses Motion Magic velocity control.
 - Computes distance to the current alliance hub from drivetrain pose.
-- Uses a simple distance-to-speed model that can be tuned later.
+- Uses a distance-to-speed model and motion-compensated lookahead based on robot motion.
 
 ### `Pivot`
 
@@ -51,37 +57,44 @@ The robot code is organized around a small set of mechanism subsystems plus one 
 ### `Intake`
 
 - Uses Motion Magic velocity control for the intake roller.
-- Provides forward, reverse, and stop actions.
+- Provides forward, reverse, and stop actions for fuel handling.
 
 ### `Spindexer`
 
 - Uses Motion Magic velocity control for:
-  - spindexer motor
-  - receiver motor
-- Receiver speed is kept faster than the spindexer but slower than the shooter target speed.
+  - the spindexer motor
+  - the receiver motor
+- Derives receiver speed from the commanded spindexer speed using a fixed ratio.
+- Reapplies the active velocity targets every loop.
+
+### `Climber`
+
+- Uses Motion Magic position control for the climber.
+- Exposes simple up and down presets.
+- Can be left disabled with the climber feature flag if the hardware is not installed.
 
 ### `Limelight_Pose`
 
-- Reads Limelight data.
-- Chooses acceptable vision measurements.
-- Supplies accepted vision updates to the drivetrain estimator.
+- Reads both Limelights.
+- Evaluates MegaTag1 and MegaTag2 estimates for each camera.
+- Rejects stale or weak frames and chooses accepted measurements.
+- Publishes a selected vision pose for dashboards and accepted measurements for drivetrain fusion.
 
 ### `SuperStructure`
 
-- Combines mechanism actions into higher-level scoring/intake/autonomous commands.
-- Keeps `RobotContainer` button bindings simpler.
+- Combines mechanism actions into higher-level shooting, intake, and autonomous commands.
+- Keeps `RobotContainer` bindings and PathPlanner named commands simpler.
 
 ## Autonomous Flow
 
 Autonomous command selection comes from the chooser in `RobotContainer`.
 
-The `SuperStructure` now provides auton-friendly commands such as:
+`RobotContainer` also registers PathPlanner named commands that map to `SuperStructure` helpers such as:
 
-- prepare tracked shot
-- prepare failsafe shot
-- wait until ready
-- feed a shot
-- intake and stage
+- tracked-shot preparation
+- failsafe-shot preparation
+- timed feed commands
+- intake and staging
 - stow
 
-These are intended to be used directly in command sequences or PathPlanner named commands.
+Those helpers are intended to be used directly in PathPlanner autos and command sequences.

@@ -1,12 +1,12 @@
-# Elastic Telemetry
+# Telemetry
 
 The robot publishes telemetry to the `Elastic` NetworkTables tree.
 
-Telemetry publishing is intentionally throttled in `ElasticTelemetry` to avoid excessive update load.
+Telemetry publishing in `ElasticTelemetry` is intentionally throttled to avoid excessive update load.
 
-## Status Topics
+## Elastic Topics
 
-Published under `Elastic/Status`:
+### `Elastic/Status`
 
 - `RobotMode`
 - `Alliance`
@@ -18,18 +18,14 @@ Published under `Elastic/Status`:
 - `MatchTimeSeconds`
 - `BatteryVoltage`
 
-## Drive Topics
-
-Published under `Elastic/Drive`:
+### `Elastic/Drive`
 
 - `Pose`
 - `PoseXMeters`
 - `PoseYMeters`
 - `HeadingDegrees`
 
-## Vision Topics
-
-Published under `Elastic/Vision`:
+### `Elastic/Vision`
 
 - `HasVisionPose`
 - `SelectedCamera`
@@ -40,12 +36,20 @@ Published under `Elastic/Vision`:
 - `XYStdDev`
 - `ThetaStdDev`
 
-## Turret Topics
+These are the currently selected vision values, not the full left and right camera debug set.
 
-Published under `Elastic/Turret`:
+### `Elastic/Auto`
+
+- `ShooterReady`
+- `TurretAndShooterReady`
+- `SelectedAuto`
+- `PreviewStatus`
+
+### `Elastic/Turret`
 
 - `MeasuredAngleDegrees`
 - `RequestedAngleDegrees`
+- `AngleErrorDegrees`
 - `AtTarget`
 - `HubAimDegrees`
 - `CompensatedAimDegrees`
@@ -54,41 +58,60 @@ Published under `Elastic/Turret`:
 - `AlignTargetXMeters`
 - `AlignTargetYMeters`
 
-## Shooter Topics
-
-Published under `Elastic/Shooter`:
+### `Elastic/Shooter`
 
 - `DistanceToHubMeters`
+- `DistanceToHubFeet`
 - `TargetVelocityRPS`
 - `MeasuredVelocityRPS`
+- `VelocityErrorRPS`
+- `VelocityMagnitudeErrorRPS`
+- `NearTargetSigned`
+- `NearTargetMagnitude`
 
-## Pivot Topics
-
-Published under `Elastic/Pivot`:
+### `Elastic/Pivot`
 
 - `MeasuredAngleDegrees`
 - `SetpointAngleDegrees`
 
-## Climber Topics
-
-Published under `Elastic/Climber`:
+### `Elastic/Climber`
 
 - `EncoderRotations`
 - `EncoderTargetRotations`
 - `IsAtPosition`
 
-## Intake Topics
-
-Published under `Elastic/Intake`:
+### `Elastic/Intake`
 
 - `TargetVelocityRPS`
 - `MeasuredVelocityRPS`
 
-## Spindexer Topics
-
-Published under `Elastic/Spindexer`:
+### `Elastic/Spindexer`
 
 - `SpindexerTargetVelocityRPS`
 - `SpindexerMeasuredVelocityRPS`
 - `ReceiverTargetVelocityRPS`
 - `ReceiverMeasuredVelocityRPS`
+- `SpindexerCurrentAmps`
+- `ReceiverCurrentAmps`
+- `FeedingCommanded`
+
+## Dashboard Widgets
+
+The robot also publishes these `Field2d` and chooser widgets through SmartDashboard:
+
+- `Elastic/Auton Field`
+- `Elastic/Auto Chooser`
+- `Elastic/Robot Pose Field`
+
+## Additional Vision Diagnostics
+
+`Limelight_Pose` publishes more detailed camera-by-camera tuning data to SmartDashboard, not to Elastic.
+
+Those keys are grouped under:
+
+- `Vision/Selected/*`
+- `Vision/Left/*`
+- `Vision/Right/*`
+- `Vision/Drive/*`
+
+That SmartDashboard data is where the full per-camera acceptance, rejection, quality, and pose-jump diagnostics currently live.

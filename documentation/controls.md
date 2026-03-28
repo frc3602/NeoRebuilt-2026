@@ -6,23 +6,23 @@ This file describes the current controller bindings from `RobotContainer`.
 
 ### `B` hold
 
-- Runs the full tracked shot.
+- Runs the full tracked shot while held.
 - While held:
-  - turret aligns to the live target
-  - shooter updates to distance-based speed
-  - spindexer starts automatically once the shot is ready and keeps feeding until release
+  - turret aims at the live alliance target with motion compensation
+  - shooter updates to a distance-based target velocity
+  - spindexer begins feeding after the shooter-ready gate and tracked-shot feed delay
 
 ### `Right Bumper` hold
 
-- Runs the full failsafe shot.
+- Runs the full fallback shot while held.
 - While held:
   - turret moves to the rear preset
-  - shooter runs at the fixed failsafe speed
-  - spindexer starts automatically once the shot is ready and keeps feeding until release
+  - shooter runs at the current fixed fallback target velocity
+  - spindexer begins feeding once the turret and shooter are both ready
 
 ### `Y` hold
 
-- Reverses the shooter, receiver/spindexer, and intake for clearing or unjamming.
+- Reverses the shooter, feed path, and intake to clear fuel from the system.
 
 ### `Left Bumper`
 
@@ -71,15 +71,17 @@ This file describes the current controller bindings from `RobotContainer`.
 
 - Brakes the swerve drive.
 
-### `Y` hold
+### `Y`
 
-- Points the swerve modules toward the left stick direction.
+- No binding currently.
 
 ## Driver Rumble
 
 The driver controller rumbles while:
 
 - the operator is holding `B`
-- and the tracked shot is actually ready to fire
+- and the tracked shot is fully ready to fire
 
-This is meant to act as a simple “ready to send” signal.
+In the current code, "fully ready" means the turret is at target and the shooter is near target speed.
+
+This is meant to act as a simple "ready to send" signal.
