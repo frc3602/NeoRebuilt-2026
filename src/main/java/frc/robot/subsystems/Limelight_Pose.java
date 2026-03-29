@@ -78,16 +78,16 @@ public class Limelight_Pose extends SubsystemBase {
   // These thresholds lean toward accepting a little more valid tag data so the
   // drivetrain estimator does not slowly wander away from the field while the
   // Limelights are already reporting believable X/Y values.
-  private static final double MIN_MT2_TAG_AREA = 0.12;
+  private static final double MIN_MT2_TAG_AREA = 0.19;
   private static final double MIN_MT1_TAG_AREA = 0.20;
   private static final double MAX_MT2_TAG_DISTANCE_METERS = 4.5;
   private static final double MAX_MT1_TAG_DISTANCE_METERS = 5.0;
   private static final double MAX_MT2_AMBIGUITY = 0.35;
   private static final double MAX_MT1_AMBIGUITY = 0.32;
-  private static final double MAX_LATENCY_MILLISECONDS = 90.0;
+  private static final double MAX_LATENCY_MILLISECONDS = 190.0;
   private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.20;
-  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 1.8;
-  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.10;
+  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 2.8;
+  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 2.10;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 40.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
