@@ -75,20 +75,23 @@ public class Limelight_Pose extends SubsystemBase {
   // estimator. We keep the names explicit so students can connect the number with
   // the estimator behavior.
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
-  // These thresholds lean toward accepting a little more valid tag data so the
-  // drivetrain estimator does not slowly wander away from the field while the
-  // Limelights are already reporting believable X/Y values.
-  private static final double MIN_MT2_TAG_AREA = 0.19;
-  private static final double MIN_MT1_TAG_AREA = 0.20;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 4.5;
-  private static final double MAX_MT1_TAG_DISTANCE_METERS = 5.0;
-  private static final double MAX_MT2_AMBIGUITY = 0.35;
-  private static final double MAX_MT1_AMBIGUITY = 0.32;
-  private static final double MAX_LATENCY_MILLISECONDS = 190.0;
-  private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.20;
-  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 2.8;
-  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 2.10;
-  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 40.0;
+  // These thresholds are intentionally forgiving so the drivetrain can actually
+  // benefit from AprilTag solves seen across a wider part of the field instead of
+  // dropping them for being slightly small, far, or delayed.
+  private static final double MIN_MT2_TAG_AREA = 0.10;
+  private static final double MIN_MT1_TAG_AREA = 0.12;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 6.5;
+  private static final double MAX_MT1_TAG_DISTANCE_METERS = 7.0;
+  private static final double MAX_MT2_AMBIGUITY = 0.50;
+  private static final double MAX_MT1_AMBIGUITY = 0.42;
+  private static final double MAX_LATENCY_MILLISECONDS = 250.0;
+  private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.35;
+  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 4.5;
+  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 5.5;
+  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 70.0;
+  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.10;
+  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 4.5;
+  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.40;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
@@ -265,7 +268,6 @@ public class Limelight_Pose extends SubsystemBase {
    * not accidentally apply the same camera frames again on a later loop.
    */
   public void UpdateVisionCorrectionAdded() {
-    poseUpdateAvailable = false;
     poseUpdateAvailableCam1 = false;
     poseUpdateAvailableCam2 = false;
   }
@@ -510,9 +512,9 @@ public class Limelight_Pose extends SubsystemBase {
     // it helps. We only accept one-tag MT2 frames when the tag is large, close,
     // and very unambiguous.
     if (estimate.tagCount == 1) {
-      boolean singleTagIsStrong = estimate.avgTagArea >= 0.20
-          && estimate.avgTagDist <= 3.0
-          && maxAmbiguity <= 0.20;
+      boolean singleTagIsStrong = estimate.avgTagArea >= MIN_MT2_SINGLE_TAG_AREA
+          && estimate.avgTagDist <= MAX_MT2_SINGLE_TAG_DISTANCE_METERS
+          && maxAmbiguity <= MAX_MT2_SINGLE_TAG_AMBIGUITY;
       return singleTagIsStrong;
     }
 
