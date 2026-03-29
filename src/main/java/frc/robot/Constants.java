@@ -23,7 +23,7 @@ public final class Constants {
         private static final double kLegacyShooterAccelerationRotationsPerSecondSquared = 600.0;
         private static final double kLegacyShooterJerkRotationsPerSecondCubed = 6000.0;
         private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
-        private static final double kOverallShotVelocityScale = 1.08;
+        private static final double kOverallShotVelocityScale = 1.02;
         private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond =
             44.0 * kOverallShotVelocityScale;
         private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond =
@@ -249,7 +249,7 @@ public final class Constants {
 
         public static final double kSpindexerCurrentLimit = 40.0;
         public static final double kReceiverCurrentLimit = 40.0;
-        public static final double kFeedVelocityKP = 0.11;
+        public static final double kFeedVelocityKP = 0.35;
         public static final double kFeedVelocityKI = 0.0;
         public static final double kFeedVelocityKD = 0.0;
         public static final double kFeedVelocityKS = 0.25;
