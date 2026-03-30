@@ -28,8 +28,9 @@ Recommended simplified design:
 - Keep one shared `Limelight_Pose` subsystem.
 - Keep the drivetrain estimator fusion flow.
 - Keep a selected vision pose for dashboards.
-- Use one pose mode per camera for the whole experiment.
-- Give each accepted camera frame fixed trust values instead of dynamic trust weighting.
+- Use `MegaTag2` only on both cameras for the whole experiment.
+- Give each accepted camera frame a fixed `XYStdDev`.
+- Give each accepted camera frame a very large `ThetaStdDev` so heading stays gyro-dominated.
 - Fuse both accepted camera measurements when both are valid.
 
 Recommended cuts:
@@ -53,8 +54,9 @@ Recommended safeguards to keep:
 - Prefer changing only `src/main/java/frc/robot/subsystems/Limelight_Pose.java` unless a small telemetry cleanup is truly needed.
 - Keep `getAcceptedMeasurements()` working so drivetrain fusion in `src/main/java/frc/robot/subsystems/Drivetrain.java` stays familiar.
 - Keep the selected-pose outputs used by `src/main/java/frc/robot/telemetry/ElasticTelemetry.java`.
-- Choose one pose mode for the experiment and document it in code comments and commit messages.
+- Keep the branch explicitly documented as `MegaTag2-only`.
 - Use fixed `XYStdDev` and `ThetaStdDev` values for the first version of the branch.
+- Expect selected-camera behavior to mean "newest accepted frame" rather than the older preferred-camera hysteresis logic.
 - Keep enough dashboard output to answer basic field questions:
 - Which camera was accepted?
 - Did either camera have a fresh frame?
@@ -190,7 +192,7 @@ Topics:
 Good signs:
 
 - `HasVisionPose` goes true reliably when tags are visible.
-- `SelectedCamera` changes only when it makes sense from robot position or tag visibility.
+- `SelectedCamera` changes only when it makes sense from frame timing or tag visibility.
 - Vision pose is reasonably close to the drive pose most of the time.
 - `XYStdDev` and `ThetaStdDev` stay stable for similar viewing conditions on repeated tests.
 - When the robot stops with tags in view, the vision pose and drive pose converge instead of fighting each other.
@@ -198,15 +200,15 @@ Good signs:
 Warning signs:
 
 - `HasVisionPose` flickers on and off constantly in situations where tags should be usable.
-- `SelectedCamera` thrashes back and forth without a clear reason.
+- `SelectedCamera` thrashes back and forth even when one camera clearly has the better real-world view.
 - Vision pose repeatedly disagrees with drive pose by a large amount.
 - `XYStdDev` or `ThetaStdDev` behave inconsistently for the same test setup.
-- Vision heading looks obviously wrong compared with the robot's real orientation.
+- Vision heading looks obviously wrong compared with the robot's real orientation and appears to confuse operators, even though the branch is gyro-dominant for heading.
 
 ### What To Compare Between Branches
 
 - How often `HasVisionPose` is available at your normal scoring and driving locations.
-- Whether `SelectedCamera` behavior feels predictable and explainable.
+- Whether `SelectedCamera` behavior feels predictable and explainable as "newest good frame."
 - Whether the vision pose is calmer after the robot stops.
 - Whether the drive pose converges faster after a stop.
 - Whether repeated autos produce tighter end-pose grouping.
@@ -219,14 +221,14 @@ Treat Elastic as supporting evidence that the simpler branch is working if most 
 - Drive pose looks smoother or equally smooth compared with baseline.
 - Vision and drive pose disagree less, or at least not more, in normal use.
 - Post-stop settling is as fast or faster than baseline.
-- Camera selection looks understandable to the operators.
+- Camera selection looks understandable to the operators as the newest accepted camera update.
 
 Treat Elastic as evidence against the simpler branch if these show up often:
 
 - Vision availability drops in places where the current branch works.
 - Drive pose snaps more often after vision updates.
 - Vision and drive pose fight each other during shot setup.
-- Camera selection becomes noisy or confusing.
+- Camera selection becomes noisy or confusing even after accounting for the branch's newest-frame selection rule.
 - Auto end poses scatter more than baseline.
 
 ## Pass / Fail Criteria
