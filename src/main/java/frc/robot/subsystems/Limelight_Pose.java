@@ -72,36 +72,23 @@ public class Limelight_Pose extends SubsystemBase {
   private static final String CAMERA_LEFT = "limelight-left";
 
   // Smaller standard deviation means "trust this measurement more" in the pose
-  // estimator. We keep the names explicit so students can connect the number with
-  // the estimator behavior.
+  // estimator. This branch intentionally uses fixed trust values so the vision
+  // pipeline is easier to reason about and tune.
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
-  // These thresholds are intentionally forgiving so the drivetrain can actually
-  // benefit from AprilTag solves seen across a wider part of the field instead of
-  // dropping them for being slightly small, far, or delayed.
-  private static final double MIN_MT2_TAG_AREA = 0.10;
-  private static final double MIN_MT1_TAG_AREA = 0.12;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 6.5;
-  private static final double MAX_MT1_TAG_DISTANCE_METERS = 7.0;
-  private static final double MAX_MT2_AMBIGUITY = 0.50;
-  private static final double MAX_MT1_AMBIGUITY = 0.42;
+  private static final double FIXED_XY_STD_DEV = 0.90;
+  private static final double FIXED_THETA_STD_DEV = LARGE_ROTATION_STD_DEV;
+
+  // This branch uses MegaTag2 only. We keep a few simple safety gates so each
+  // camera can contribute translation help without the old MT1-vs-MT2 arbitration.
+  private static final double MIN_TAG_AREA = 0.10;
+  private static final double MAX_TAG_DISTANCE_METERS = 6.5;
+  private static final double MAX_AMBIGUITY = 0.50;
   private static final double MAX_LATENCY_MILLISECONDS = 250.0;
   private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.35;
-  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 4.5;
-  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 5.5;
-  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 70.0;
-  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.10;
-  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 4.5;
-  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.40;
-  private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
-  private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
-  private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
-  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.28;
-  private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
-  // MegaTag1 is the full AprilTag pose solve that can contribute both translation
-  // and rotation corrections. We keep this toggle in the code so the team can
-  // temporarily disable MegaTag1 during troubleshooting without rewriting the
-  // measurement-selection logic.
-  private static final boolean ALLOW_MEGATAG1_UPDATES = true;
+  private static final double MAX_TRANSLATION_JUMP_METERS = 5.5;
+  private static final double MIN_SINGLE_TAG_AREA = 0.10;
+  private static final double MAX_SINGLE_TAG_DISTANCE_METERS = 4.5;
+  private static final double MAX_SINGLE_TAG_AMBIGUITY = 0.40;
 
   /** Creates a new Limelight pose subsystem. */
 
@@ -143,7 +130,7 @@ public class Limelight_Pose extends SubsystemBase {
   public double currentDriveTheta;
   public double currentDriveYawRate;
   public double currentDriveLinearSpeedMetersPerSecond;
-  private String preferredCameraName = "None";
+  private String selectedCameraName = "None";
 
   private CameraMeasurementDecision cam1Decision = new CameraMeasurementDecision();
   private CameraMeasurementDecision cam2Decision = new CameraMeasurementDecision();
@@ -176,8 +163,8 @@ public class Limelight_Pose extends SubsystemBase {
    * Evaluates the right Limelight and stores whether it produced a fresh, useful
    * pose update this loop.
    *
-   * The method reads both MegaTag1 and MegaTag2, rejects stale frames, chooses the
-   * best pose mode for that frame, and remembers why the decision was made.
+   * The simplified branch treats the right camera as one independent MegaTag2 pose
+   * source. If the frame is fresh and passes a few basic checks, it can be fused.
    */
   public void SetPoseEstimateInfoCam1() {
     cam1Decision = evaluateCameraMeasurement(CAMERA_RIGHT, timestampCam1Previous);
@@ -195,7 +182,7 @@ public class Limelight_Pose extends SubsystemBase {
    * pose update this loop.
    *
    * The method mirrors the right-camera logic so both cameras are judged with the
-   * same rules and can be compared fairly.
+   * same simple rules and can be fused independently.
    */
   public void SetPoseEstimateInfoCam2() {
     cam2Decision = evaluateCameraMeasurement(CAMERA_LEFT, timestampCam2Previous);
@@ -212,9 +199,9 @@ public class Limelight_Pose extends SubsystemBase {
    * Chooses the best accepted camera measurement to publish as the shared
    * "selected" vision pose.
    *
-   * The drivetrain estimator can now fuse both accepted camera updates, but the
-   * rest of the robot still benefits from having one clearly labeled "best" pose
-   * for dashboards and aiming debug readouts.
+   * The drivetrain estimator can fuse both accepted camera updates, but the rest
+   * of the robot still benefits from one clearly labeled selected pose for
+   * dashboards and aiming debug readouts.
    */
   public void SetPoseEstimateForDrive() {
     poseUpdateAvailable = false;
@@ -222,14 +209,16 @@ public class Limelight_Pose extends SubsystemBase {
     poseUpdateXYTrustFactor = 0.0;
     poseUpdateRotTrustFactor = LARGE_ROTATION_STD_DEV;
 
-    CameraMeasurementDecision selectedDecision = choosePreferredDecision();
+    CameraMeasurementDecision selectedDecision = chooseSelectedDecision();
 
     if (selectedDecision != null) {
       poseCamEstimate = selectedDecision.selectedEstimate;
       poseUpdateXYTrustFactor = selectedDecision.xyStdDev;
       poseUpdateRotTrustFactor = selectedDecision.thetaStdDev;
       poseUpdateAvailable = true;
-      preferredCameraName = selectedDecision.cameraName;
+      selectedCameraName = selectedDecision.cameraName;
+    } else {
+      selectedCameraName = "None";
     }
   }
 
@@ -302,77 +291,65 @@ public class Limelight_Pose extends SubsystemBase {
   }
 
   /**
-   * Reads both pose modes from one camera and decides whether this loop produced a
+   * Reads the camera's MegaTag2 estimate and decides whether this loop produced a
    * usable new measurement.
    *
-   * The method rejects stale frames first, then prefers MegaTag1 when tag geometry
-   * is excellent, otherwise falls back to MegaTag2 for translation-only help.
+   * This branch intentionally keeps the logic simple: use one pose mode, reject
+   * stale or obviously weak frames, and forward good measurements to the
+   * drivetrain estimator.
    */
   private CameraMeasurementDecision evaluateCameraMeasurement(String cameraName, double previousTimestamp) {
     CameraMeasurementDecision decision = new CameraMeasurementDecision();
     decision.cameraName = cameraName;
 
     try {
-      PoseEstimate megaTag1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
-      PoseEstimate megaTag2Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
-      PoseEstimate freshestEstimate = getFreshestEstimate(megaTag1Estimate, megaTag2Estimate);
-      boolean megaTag1Fresh = isEstimateFresh(megaTag1Estimate, previousTimestamp);
-      boolean megaTag2Fresh = isEstimateFresh(megaTag2Estimate, previousTimestamp);
+      PoseEstimate estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
 
-      if (freshestEstimate == null) {
+      if (estimate == null) {
         decision.statusMessage = "No pose data available from the camera";
         return decision;
       }
 
-      decision.timestampSeconds = freshestEstimate.timestampSeconds;
-      decision.measurementAgeSeconds = Math.max(0.0, Timer.getFPGATimestamp() - freshestEstimate.timestampSeconds);
+      updateDecisionMetrics(decision, estimate);
 
-      if (freshestEstimate.tagCount < 1) {
-        fillRejectedFrameDetails(decision, freshestEstimate);
+      if (estimate.tagCount < 1) {
+        fillRejectedFrameDetails(decision, estimate);
         decision.statusMessage = "Camera sees no AprilTags";
         return decision;
       }
 
-      if (freshestEstimate.timestampSeconds <= previousTimestamp) {
-        fillRejectedFrameDetails(decision, freshestEstimate);
+      if (estimate.timestampSeconds <= previousTimestamp) {
+        fillRejectedFrameDetails(decision, estimate);
         decision.statusMessage = "Camera frame is stale and was already processed";
         return decision;
       }
 
       decision.processedFreshFrame = true;
 
-      if (freshestEstimate.latency > MAX_LATENCY_MILLISECONDS) {
-        fillRejectedFrameDetails(decision, freshestEstimate);
+      if (estimate.latency > MAX_LATENCY_MILLISECONDS) {
+        fillRejectedFrameDetails(decision, estimate);
         decision.statusMessage = "Rejected fresh frame because latency was too high";
         return decision;
       }
 
       if (decision.measurementAgeSeconds > MAX_MEASUREMENT_AGE_SECONDS) {
-        fillRejectedFrameDetails(decision, freshestEstimate);
+        fillRejectedFrameDetails(decision, estimate);
         decision.statusMessage = "Rejected fresh frame because it was too old";
         return decision;
       }
 
-      // Check freshness per pose mode instead of only once per camera. This keeps
-      // an older MegaTag1 or MegaTag2 result from being reused just because the
-      // other mode happened to update more recently.
-      if (ALLOW_MEGATAG1_UPDATES
-          && megaTag1Fresh
-          && isMegaTag1Reliable(megaTag1Estimate)
-          && passesDriveStateValidation(megaTag1Estimate, true, decision)) {
-        fillDecisionFromEstimate(decision, megaTag1Estimate, true);
-        decision.statusMessage = "Accepted fresh MegaTag1 frame";
-      } else if (megaTag2Fresh
-          && isMegaTag2Reliable(megaTag2Estimate)
-          && passesDriveStateValidation(megaTag2Estimate, false, decision)) {
-        fillDecisionFromEstimate(decision, megaTag2Estimate, false);
-        decision.statusMessage = "Accepted fresh MegaTag2 translation update";
-      } else {
-        fillRejectedFrameDetails(decision, freshestEstimate);
-        if (decision.statusMessage.equals("No measurement processed yet")) {
-          decision.statusMessage = "Rejected fresh frame because tag geometry was too weak";
-        }
+      if (!passesBasicReliabilityChecks(estimate)) {
+        fillRejectedFrameDetails(decision, estimate);
+        decision.statusMessage = "Rejected fresh frame because tag geometry was too weak";
+        return decision;
       }
+
+      if (!passesDriveStateValidation(estimate, decision)) {
+        return decision;
+      }
+
+      fillDecisionFromEstimate(decision, estimate);
+      decision.statusMessage = "Accepted fresh MegaTag2 frame";
     } catch (Exception e) {
       decision.statusMessage = "Failed to read Limelight data: " + e.getMessage();
       DriverStation.reportError("Vision camera data not present for " + cameraName + ": " + e.getMessage(),
@@ -383,46 +360,13 @@ public class Limelight_Pose extends SubsystemBase {
   }
 
   /**
-   * Returns the newest pose estimate between MegaTag1 and MegaTag2.
+   * Chooses which accepted camera update to publish as the selected dashboard
+   * pose.
    *
-   * This lets us process each camera frame once, even if one pose mode updates a
-   * tiny bit earlier than the other.
+   * We keep this simple too: use the newest accepted measurement, with a right
+   * camera tie-break if both timestamps are equal.
    */
-  private PoseEstimate getFreshestEstimate(PoseEstimate megaTag1Estimate, PoseEstimate megaTag2Estimate) {
-    if (megaTag1Estimate == null) {
-      return megaTag2Estimate;
-    }
-
-    if (megaTag2Estimate == null) {
-      return megaTag1Estimate;
-    }
-
-    if (megaTag2Estimate.timestampSeconds >= megaTag1Estimate.timestampSeconds) {
-      return megaTag2Estimate;
-    }
-
-    return megaTag1Estimate;
-  }
-
-  /**
-   * Returns whether a specific pose mode produced a new estimate this loop.
-   *
-   * We track freshness per pose mode because MegaTag1 and MegaTag2 may not update
-   * at exactly the same time. A newer result in one mode should not make an older
-   * result in the other mode look fresh by accident.
-   */
-  private boolean isEstimateFresh(PoseEstimate estimate, double previousTimestamp) {
-    return estimate != null && estimate.timestampSeconds > previousTimestamp;
-  }
-
-  /**
-   * Chooses which accepted camera update should be fused this loop.
-   *
-   * If both cameras look good, we use a small hysteresis margin before switching
-   * away from the previously preferred camera. This helps prevent the robot from
-   * bouncing between left and right camera updates when they are nearly equal.
-   */
-  private CameraMeasurementDecision choosePreferredDecision() {
+  private CameraMeasurementDecision chooseSelectedDecision() {
     if (!poseUpdateAvailableCam1 && !poseUpdateAvailableCam2) {
       return null;
     }
@@ -435,58 +379,20 @@ public class Limelight_Pose extends SubsystemBase {
       return cam2Decision;
     }
 
-    if (CAMERA_RIGHT.equals(preferredCameraName)
-        && cam2Decision.qualityScore <= cam1Decision.qualityScore + CAMERA_SWITCH_QUALITY_MARGIN) {
+    if (cam1Decision.timestampSeconds >= cam2Decision.timestampSeconds) {
       return cam1Decision;
     }
 
-    if (CAMERA_LEFT.equals(preferredCameraName)
-        && cam1Decision.qualityScore <= cam2Decision.qualityScore + CAMERA_SWITCH_QUALITY_MARGIN) {
-      return cam2Decision;
-    }
-
-    if (cam2Decision.qualityScore > cam1Decision.qualityScore) {
-      return cam2Decision;
-    }
-
-    return cam1Decision;
+    return cam2Decision;
   }
 
   /**
-   * Checks whether MegaTag1 is strong enough to trust for both translation and
-   * rotation.
+   * Applies a short list of tag-quality checks before a frame can be fused.
    *
-   * MegaTag1 is most helpful when we can see multiple tags with large image area,
-   * low ambiguity, and reasonable distance. Those conditions usually mean the robot
-   * has a solid geometric solution.
+   * The goal is to keep the rules understandable instead of dynamically blending
+   * between several different vision modes and trust calculations.
    */
-  private boolean isMegaTag1Reliable(PoseEstimate estimate) {
-    if (estimate == null) {
-      return false;
-    }
-
-    if (estimate.tagCount < 2) {
-      return false;
-    }
-
-    if (estimate.avgTagArea < MIN_MT1_TAG_AREA) {
-      return false;
-    }
-
-    if (estimate.avgTagDist > MAX_MT1_TAG_DISTANCE_METERS) {
-      return false;
-    }
-
-    return getMaxAmbiguity(estimate) <= MAX_MT1_AMBIGUITY;
-  }
-
-  /**
-   * Checks whether MegaTag2 is strong enough to trust for translation help.
-   *
-   * MegaTag2 can still improve X/Y position even when we do not want to trust its
-   * heading, so the requirements are a little more forgiving than MegaTag1.
-   */
-  private boolean isMegaTag2Reliable(PoseEstimate estimate) {
+  private boolean passesBasicReliabilityChecks(PoseEstimate estimate) {
     if (estimate == null) {
       return false;
     }
@@ -495,26 +401,25 @@ public class Limelight_Pose extends SubsystemBase {
       return false;
     }
 
-    if (estimate.avgTagArea < MIN_MT2_TAG_AREA) {
+    if (estimate.avgTagArea < MIN_TAG_AREA) {
       return false;
     }
 
-    if (estimate.avgTagDist > MAX_MT2_TAG_DISTANCE_METERS) {
+    if (estimate.avgTagDist > MAX_TAG_DISTANCE_METERS) {
       return false;
     }
 
     double maxAmbiguity = getMaxAmbiguity(estimate);
-    if (maxAmbiguity > MAX_MT2_AMBIGUITY) {
+    if (maxAmbiguity > MAX_AMBIGUITY) {
       return false;
     }
 
-    // For tower aiming, a weak single-tag MegaTag2 solve usually hurts more than
-    // it helps. We only accept one-tag MT2 frames when the tag is large, close,
-    // and very unambiguous.
+    // Weak one-tag solves are still where simple pose pipelines get in trouble
+    // most often, so we keep this one stronger special case.
     if (estimate.tagCount == 1) {
-      boolean singleTagIsStrong = estimate.avgTagArea >= MIN_MT2_SINGLE_TAG_AREA
-          && estimate.avgTagDist <= MAX_MT2_SINGLE_TAG_DISTANCE_METERS
-          && maxAmbiguity <= MAX_MT2_SINGLE_TAG_AMBIGUITY;
+      boolean singleTagIsStrong = estimate.avgTagArea >= MIN_SINGLE_TAG_AREA
+          && estimate.avgTagDist <= MAX_SINGLE_TAG_DISTANCE_METERS
+          && maxAmbiguity <= MAX_SINGLE_TAG_AMBIGUITY;
       return singleTagIsStrong;
     }
 
@@ -524,24 +429,23 @@ public class Limelight_Pose extends SubsystemBase {
   /**
    * Copies an accepted pose estimate into the camera decision object.
    *
-   * This method stores the selected pose, computes estimator standard deviations,
-   * and assigns a quality score that can be compared against the other camera.
+   * This method stores the selected pose and assigns the branch's fixed trust
+   * values.
    */
-  private void fillDecisionFromEstimate(CameraMeasurementDecision decision, PoseEstimate estimate,
-      boolean usingMegaTag1) {
+  private void fillDecisionFromEstimate(CameraMeasurementDecision decision, PoseEstimate estimate) {
     updateDecisionMetrics(decision, estimate);
     decision.acceptedMeasurement = true;
-    decision.usingMegaTag1 = usingMegaTag1;
-    decision.usingMegaTag2 = !usingMegaTag1;
+    decision.usingMegaTag1 = false;
+    decision.usingMegaTag2 = true;
     decision.selectedEstimate = estimate;
     decision.tagCount = estimate.tagCount;
     decision.avgTagArea = estimate.avgTagArea;
     decision.avgTagDist = estimate.avgTagDist;
     decision.tagSpan = estimate.tagSpan;
     decision.maxAmbiguity = getMaxAmbiguity(estimate);
-    decision.xyStdDev = calculateXYStdDev(estimate, usingMegaTag1);
-    decision.thetaStdDev = calculateThetaStdDev(estimate, usingMegaTag1);
-    decision.qualityScore = calculateQualityScore(estimate, usingMegaTag1);
+    decision.xyStdDev = FIXED_XY_STD_DEV;
+    decision.thetaStdDev = FIXED_THETA_STD_DEV;
+    decision.qualityScore = calculateSimpleQualityScore(estimate);
   }
 
   /**
@@ -553,7 +457,7 @@ public class Limelight_Pose extends SubsystemBase {
   private void fillRejectedFrameDetails(CameraMeasurementDecision decision, PoseEstimate estimate) {
     updateDecisionMetrics(decision, estimate);
     decision.selectedEstimate = estimate;
-    decision.qualityScore = calculateQualityScore(estimate, false);
+    decision.qualityScore = calculateSimpleQualityScore(estimate);
   }
 
   /**
@@ -584,25 +488,17 @@ public class Limelight_Pose extends SubsystemBase {
    * Checks whether a camera frame is reasonably close to the drivetrain estimate.
    *
    * This protects the robot from one bad AprilTag solve causing a huge pose jump.
-   * MegaTag1 must agree in both translation and heading, while MegaTag2 only needs
-   * to agree in translation because we already treat its heading as untrusted.
+   * This branch only validates translation. Heading is still left to the gyro.
    */
-  private boolean passesDriveStateValidation(PoseEstimate estimate, boolean usingMegaTag1,
-      CameraMeasurementDecision decision) {
+  private boolean passesDriveStateValidation(PoseEstimate estimate, CameraMeasurementDecision decision) {
     updateDecisionMetrics(decision, estimate);
 
     if (!driveStateAvailable) {
       return true;
     }
 
-    double maxTranslationJumpMeters = usingMegaTag1 ? MAX_MT1_TRANSLATION_JUMP_METERS : MAX_MT2_TRANSLATION_JUMP_METERS;
-    if (decision.translationErrorMeters > maxTranslationJumpMeters) {
+    if (decision.translationErrorMeters > MAX_TRANSLATION_JUMP_METERS) {
       decision.statusMessage = "Rejected fresh frame because pose jump was too large";
-      return false;
-    }
-
-    if (usingMegaTag1 && decision.headingErrorDegrees > MAX_MT1_HEADING_JUMP_DEGREES) {
-      decision.statusMessage = "Rejected fresh frame because heading jump was too large";
       return false;
     }
 
@@ -610,142 +506,20 @@ public class Limelight_Pose extends SubsystemBase {
   }
 
   /**
-   * Calculates how much we should trust a vision update's X and Y position.
+   * Produces a simple debug score for dashboard comparison.
    *
-   * Lower values mean the estimator will trust the camera more. We reward multiple
-   * tags, larger tag area, and shorter distance, and we become more conservative
-   * when ambiguity grows.
+   * This is not used for measurement selection anymore; it is only a compact hint
+   * for how strong the current frame looks while tuning.
    */
-  private double calculateXYStdDev(PoseEstimate estimate, boolean usingMegaTag1) {
-    // Start from a moderate baseline so clean tag frames can noticeably tug the
-    // estimator back toward reality instead of being drowned out by wheel drift.
-    double xyStdDev = 1.10;
-
-    if (estimate.tagCount >= 2) {
-      xyStdDev -= 0.25;
-    }
-
-    if (estimate.tagCount >= 3) {
-      xyStdDev -= 0.10;
-    }
-
-    if (estimate.avgTagArea >= 0.20) {
-      xyStdDev -= 0.20;
-    }
-
-    if (estimate.avgTagArea < 0.30) {
-      xyStdDev += 0.15;
-    }
-
-    if (estimate.avgTagArea >= 0.35) {
-      xyStdDev -= 0.10;
-    }
-
-    if (estimate.avgTagArea >= 0.50) {
-      xyStdDev -= 0.10;
-    }
-
-    if (estimate.avgTagDist > 3.0) {
-      xyStdDev += 0.25;
-    }
-
-    if (estimate.avgTagDist > 4.5) {
-      xyStdDev += 0.40;
-    }
-
-    if (getMaxAmbiguity(estimate) > 0.25) {
-      xyStdDev += 0.25;
-    }
-
-    if (!usingMegaTag1) {
-      // MegaTag2 translation is useful, but we stay a little more conservative than
-      // a strong MegaTag1 solution.
-      xyStdDev += 0.15;
-    }
-
-    // Fast motion makes camera measurements less reliable, so we automatically
-    // trust them a little less when the drivetrain is moving aggressively.
-    xyStdDev += Math.abs(currentDriveYawRate) * 0.003;
-    xyStdDev += Math.abs(currentDriveLinearSpeedMetersPerSecond) * 0.12;
-
-    // When the robot is sitting still, a clean AprilTag frame should pull the pose
-    // estimate in faster. This helps dashboard aim angles and turret tracking
-    // settle promptly instead of visibly lagging behind the stationary camera view.
-    if (Math.abs(currentDriveYawRate) <= STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND
-        && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND) {
-      xyStdDev -= STATIONARY_XY_STD_DEV_BONUS;
-    }
-
-    return clamp(xyStdDev, 0.35, 2.40);
-  }
-
-  /**
-   * Calculates how much we should trust a vision update's rotation.
-   *
-   * MegaTag2 is treated as translation-only here, so we set a huge rotational
-   * standard deviation and let the gyro remain the primary source of heading.
-   */
-  private double calculateThetaStdDev(PoseEstimate estimate, boolean usingMegaTag1) {
-    if (!usingMegaTag1) {
-      return LARGE_ROTATION_STD_DEV;
-    }
-
-    // Strong MegaTag1 frames should be able to rein in heading drift over time, so
-    // we let clean multi-tag solves contribute more than before.
-    double thetaStdDev = 0.50;
-
-    if (estimate.tagCount >= 3) {
-      thetaStdDev -= 0.10;
-    }
-
-    if (estimate.tagCount < 3) {
-      thetaStdDev += 0.10;
-    }
-
-    if (estimate.avgTagArea < 0.30) {
-      thetaStdDev += 0.15;
-    }
-
-    if (getMaxAmbiguity(estimate) > 0.20) {
-      thetaStdDev += 0.20;
-    }
-
-    // When the robot is spinning quickly, it is safer to lean more heavily on the
-    // gyro for heading and be less aggressive with vision rotation corrections.
-    thetaStdDev += Math.abs(currentDriveYawRate) * 0.002;
-
-    // A stationary robot is the safest time to accept a strong MegaTag1 heading
-    // correction, so we tighten the rotation standard deviation a bit here too.
-    if (Math.abs(currentDriveYawRate) <= STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND
-        && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND) {
-      thetaStdDev -= STATIONARY_THETA_STD_DEV_BONUS;
-    }
-
-    return clamp(thetaStdDev, 0.35, 1.40);
-  }
-
-  /**
-   * Produces a simple quality score so two accepted camera updates can be compared.
-   *
-   * Higher scores mean the camera saw more useful tag information. We slightly
-   * prefer MegaTag1 when all else is equal because it can contribute both
-   * translation and rotation.
-   */
-  private double calculateQualityScore(PoseEstimate estimate, boolean usingMegaTag1) {
+  private double calculateSimpleQualityScore(PoseEstimate estimate) {
     double score = 0.0;
     double measurementAgeSeconds = Math.max(0.0, Timer.getFPGATimestamp() - estimate.timestampSeconds);
 
     score += estimate.tagCount * 3.0;
     score += Math.min(estimate.avgTagArea, 1.0) * 4.0;
     score += Math.max(0.0, 4.0 - estimate.avgTagDist);
-    score += Math.max(0.0, estimate.tagSpan);
     score -= getMaxAmbiguity(estimate) * 5.0;
     score -= measurementAgeSeconds * 10.0;
-    score -= Math.abs(currentDriveYawRate) * 0.01;
-
-    if (!usingMegaTag1) {
-      score -= 0.5;
-    }
 
     return score;
   }
@@ -773,16 +547,6 @@ public class Limelight_Pose extends SubsystemBase {
   }
 
   /**
-   * Limits a value to a safe range.
-   *
-   * We clamp our estimator standard deviations so a strong frame does not become
-   * unrealistically trusted and a weak frame does not become effectively useless.
-   */
-  private double clamp(double value, double minValue, double maxValue) {
-    return Math.max(minValue, Math.min(maxValue, value));
-  }
-
-  /**
    * Publishes detailed vision debugging information to SmartDashboard.
    *
    * The goal is to make the robot's decisions understandable: which camera saw a
@@ -795,8 +559,8 @@ public class Limelight_Pose extends SubsystemBase {
 
     SmartDashboard.putBoolean("Vision/Selected/Available", poseUpdateAvailable);
     SmartDashboard.putString("Vision/Selected/Camera", getSelectedCameraLabel());
-    SmartDashboard.putString("Vision/Selected/PreferredCamera", preferredCameraName);
-    SmartDashboard.putBoolean("Vision/Config/AllowMegaTag1", ALLOW_MEGATAG1_UPDATES);
+    SmartDashboard.putString("Vision/Selected/PreferredCamera", selectedCameraName);
+    SmartDashboard.putString("Vision/Config/PoseMode", "MegaTag2Only");
     SmartDashboard.putNumber("Vision/Selected/XYStdDev", poseUpdateXYTrustFactor);
     SmartDashboard.putNumber("Vision/Selected/ThetaStdDev", poseUpdateRotTrustFactor);
     publishSelectedPoseTelemetry();
@@ -887,11 +651,11 @@ public class Limelight_Pose extends SubsystemBase {
       return "None";
     }
 
-    if (cam1Decision.acceptedMeasurement && cam1Decision.selectedEstimate == poseCamEstimate) {
+    if (CAMERA_RIGHT.equals(selectedCameraName)) {
       return "Right";
     }
 
-    if (cam2Decision.acceptedMeasurement && cam2Decision.selectedEstimate == poseCamEstimate) {
+    if (CAMERA_LEFT.equals(selectedCameraName)) {
       return "Left";
     }
 
@@ -938,6 +702,7 @@ public class Limelight_Pose extends SubsystemBase {
       usingCam2MT1 = false;
       usingCam2MT2 = false;
       poseCamEstimate = null;
+      selectedCameraName = "None";
     }
 
     updateShuffleboard();
