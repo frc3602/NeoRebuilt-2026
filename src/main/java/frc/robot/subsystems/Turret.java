@@ -114,12 +114,16 @@ public class Turret extends SubsystemBase {
 
     public Translation2d getCurrentAlignTargetTranslation() {
         if (isInCenterField()) {
-            return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-                ? FieldConstants.kRedPassCornerPosition
-                : FieldConstants.kBluePassCornerPosition;
+            return getCurrentPassCornerTranslation();
         }
 
         return getCurrentHubTranslation();
+    }
+
+    public Translation2d getCurrentPassCornerTranslation() {
+        return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+            ? FieldConstants.kRedPassCornerPosition
+            : FieldConstants.kBluePassCornerPosition;
     }
 
     public String getAlignTargetMode() {
@@ -152,6 +156,10 @@ public class Turret extends SubsystemBase {
 
     public double calculateCompensatedHubAimAngleDegrees() {
         return calculateCompensatedAimAngleDegrees(getCurrentHubTranslation());
+    }
+
+    public double calculateCompensatedPassCornerAimAngleDegrees() {
+        return calculateCompensatedAimAngleDegrees(getCurrentPassCornerTranslation());
     }
 
     private double calculateCompensatedAimAngleDegrees(Translation2d targetTranslation) {
@@ -211,6 +219,10 @@ public class Turret extends SubsystemBase {
 
     public Command aimAtHubWithMotionCompOnceCommand() {
         return runOnce(() -> setTurretAngleDegrees(calculateCompensatedHubAimAngleDegrees()));
+    }
+
+    public Command aimAtPassCornerWithMotionCompCommand() {
+        return run(() -> setTurretAngleDegrees(calculateCompensatedPassCornerAimAngleDegrees()));
     }
 
     public Command alignCommand() {

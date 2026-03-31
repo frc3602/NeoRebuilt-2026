@@ -126,6 +126,40 @@ public class SuperStructure {
             .finallyDo(spindexer::stop);
     }
 
+    public boolean isTrackedPassCornerShotReady() {
+        return turret.isInCenterField()
+            && isTurretAndShooterReadyForShot();
+    }
+
+    public boolean isTrackedPassCornerShotFeedReady() {
+        return turret.isInCenterField()
+            && isShooterReadyForShot();
+    }
+
+    public Command shootTrackedPassCornerShot() {
+        return Commands.parallel(
+            turret.aimAtPassCornerWithMotionCompCommand(),
+            Commands.run(
+                () -> shooter.updateVelocityForTarget(turret.getCurrentPassCornerTranslation()),
+                shooter),
+            Commands.sequence(
+                Commands.waitUntil(this::isTrackedPassCornerShotFeedReady),
+                Commands.waitSeconds(kTrackedShotFeedDelaySeconds),
+                Commands.run(
+                    () -> {
+                        if (isTrackedPassCornerShotFeedReady()) {
+                            spindexer.feedForward();
+                        } else {
+                            spindexer.stop();
+                        }
+                    },
+                    spindexer)))
+            .finallyDo(() -> {
+                spindexer.stop();
+                shooter.stop();
+            });
+    }
+
     public Command fixedShotCommand(double shooterVelocityRotationsPerSecond) {
         return shooter.setVelocityCommand(shooterVelocityRotationsPerSecond);
     }

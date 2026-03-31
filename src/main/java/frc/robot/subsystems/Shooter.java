@@ -48,6 +48,11 @@ public class Shooter extends SubsystemBase {
         return robotTranslation.getDistance(getCurrentHubTranslation());
     }
 
+    public double getDistanceToTargetMeters(Translation2d targetTranslation) {
+        Translation2d robotTranslation = drivetrain.getEstimatedPose().getTranslation();
+        return robotTranslation.getDistance(targetTranslation);
+    }
+
     public double getTargetVelocityRotationsPerSecond() {
         return targetVelocityRotationsPerSecond;
     }
@@ -85,6 +90,15 @@ public class Shooter extends SubsystemBase {
             ShooterConstants.velocityForDistanceMeters(getCompensatedDistanceToHubMeters()));
     }
 
+    public void updateVelocityForTarget(Translation2d targetTranslation) {
+        setVelocityRotationsPerSecond(getRequiredVelocityForTarget(targetTranslation));
+    }
+
+    public double getRequiredVelocityForTarget(Translation2d targetTranslation) {
+        return ShooterConstants.velocityForDistanceMeters(
+            getCompensatedDistanceToTargetMeters(targetTranslation));
+    }
+
     public void stop() {
         shooterLeader.setControl(stopRequest.withOutput(0));
         shooterFollower.setControl(followerRequest);
@@ -113,26 +127,29 @@ public class Shooter extends SubsystemBase {
     }
 
     private double getCompensatedDistanceToHubMeters() {
+        return getCompensatedDistanceToTargetMeters(getCurrentHubTranslation());
+    }
+
+    private double getCompensatedDistanceToTargetMeters(Translation2d targetTranslation) {
         Pose2d robotPose = drivetrain.getEstimatedPose();
         Translation2d robotTranslation = robotPose.getTranslation();
-        Translation2d hubTranslation = getCurrentHubTranslation();
         var chassisSpeeds = drivetrain.getState().Speeds;
         Translation2d fieldRelativeVelocity = new Translation2d(
             chassisSpeeds.vxMetersPerSecond,
             chassisSpeeds.vyMetersPerSecond).rotateBy(robotPose.getRotation());
 
-        double currentDistanceMeters = robotTranslation.getDistance(hubTranslation);
+        double currentDistanceMeters = robotTranslation.getDistance(targetTranslation);
         double lookaheadSeconds = calculateBallTimeOfFlightSeconds(currentDistanceMeters);
 
         // Recompute once from the predicted pose so the setpoint is based on where
         // the robot will be when the note reaches the target.
         Translation2d predictedTranslation =
             robotTranslation.plus(fieldRelativeVelocity.times(lookaheadSeconds));
-        double predictedDistanceMeters = predictedTranslation.getDistance(hubTranslation);
+        double predictedDistanceMeters = predictedTranslation.getDistance(targetTranslation);
 
         return predictedTranslation.plus(
             fieldRelativeVelocity.times(calculateBallTimeOfFlightSeconds(predictedDistanceMeters)))
-            .getDistance(hubTranslation);
+            .getDistance(targetTranslation);
     }
 
     private double calculateBallTimeOfFlightSeconds(double distanceMeters) {

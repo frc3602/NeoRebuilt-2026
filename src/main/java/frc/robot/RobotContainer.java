@@ -115,8 +115,9 @@ public class RobotContainer {
         .onFalse(m_superStructure.stopIntake());
 
     m_driverController.rightTrigger()
-        .onTrue(reportUnimplementedDriveMode("Turbo mode not implemented yet"))
-        .onFalse(reportUnimplementedDriveMode("Normal drive mode restore not implemented yet"));
+        .and(m_turret::isInCenterField)
+        .whileTrue(m_superStructure.shootTrackedPassCornerShot())
+        .onFalse(m_superStructure.stopShoot());
 
     m_driverController.a().onTrue(reportUnimplementedDriveMode("Drive polarity change not implemented yet"));
 
