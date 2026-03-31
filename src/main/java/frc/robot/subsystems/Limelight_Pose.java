@@ -324,13 +324,9 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     Pose2d visionPose = selectedDecision.selectedEstimate.pose;
-    if (selectedDecision.usingMegaTag2) {
-      // MegaTag2 translation is helpful here, but we still keep the drivetrain's
-      // current heading because MT2 rotation is intentionally treated as untrusted.
-      return new Pose2d(visionPose.getTranslation(), currentDrivePose.getRotation());
-    }
-
-    return visionPose;
+    // Keep the drivetrain's current heading even for strong MegaTag1 solves so the
+    // Pigeon remains the exclusive source of robot rotation.
+    return new Pose2d(visionPose.getTranslation(), currentDrivePose.getRotation());
   }
 
   /**
@@ -782,46 +778,11 @@ public class Limelight_Pose extends SubsystemBase {
   /**
    * Calculates how much we should trust a vision update's rotation.
    *
-   * MegaTag2 is treated as translation-only here, so we set a huge rotational
-   * standard deviation and let the gyro remain the primary source of heading.
+   * Vision is treated as translation-only here so the Pigeon remains the
+   * exclusive source of robot heading.
    */
   private double calculateThetaStdDev(PoseEstimate estimate, boolean usingMegaTag1) {
-    if (!usingMegaTag1) {
-      return LARGE_ROTATION_STD_DEV;
-    }
-
-    // Strong MegaTag1 frames should be able to rein in heading drift over time, so
-    // we let clean multi-tag solves contribute more than before.
-    double thetaStdDev = 0.50;
-
-    if (estimate.tagCount >= 3) {
-      thetaStdDev -= 0.10;
-    }
-
-    if (estimate.tagCount < 3) {
-      thetaStdDev += 0.10;
-    }
-
-    if (estimate.avgTagArea < 0.30) {
-      thetaStdDev += 0.15;
-    }
-
-    if (getMaxAmbiguity(estimate) > 0.20) {
-      thetaStdDev += 0.20;
-    }
-
-    // When the robot is spinning quickly, it is safer to lean more heavily on the
-    // gyro for heading and be less aggressive with vision rotation corrections.
-    thetaStdDev += Math.abs(currentDriveYawRate) * 0.002;
-
-    // A stationary robot is the safest time to accept a strong MegaTag1 heading
-    // correction, so we tighten the rotation standard deviation a bit here too.
-    if (Math.abs(currentDriveYawRate) <= STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND
-        && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND) {
-      thetaStdDev -= STATIONARY_THETA_STD_DEV_BONUS;
-    }
-
-    return clamp(thetaStdDev, 0.35, 1.40);
+    return LARGE_ROTATION_STD_DEV;
   }
 
   /**
