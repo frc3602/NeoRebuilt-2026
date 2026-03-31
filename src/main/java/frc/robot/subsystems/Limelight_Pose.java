@@ -107,11 +107,9 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_VISION_RESET_AMBIGUITY = 0.20;
   private static final double MAX_VISION_RESET_CAMERA_DISAGREEMENT_METERS = 0.35;
   private static final double VISION_RESET_COOLDOWN_SECONDS = 0.75;
-  // MegaTag1 is the full AprilTag pose solve that can contribute both translation
-  // and rotation corrections. We keep this toggle in the code so the team can
-  // temporarily disable MegaTag1 during troubleshooting without rewriting the
-  // measurement-selection logic.
-  private static final boolean ALLOW_MEGATAG1_UPDATES = true;
+  // MegaTag1 is currently disabled so the robot runs MT2-only vision updates
+  // until the team has a reason to reintroduce MT1 on the field.
+  private static final boolean ALLOW_MEGATAG1_UPDATES = false;
 
   /** Creates a new Limelight pose subsystem. */
 
