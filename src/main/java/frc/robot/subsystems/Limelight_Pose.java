@@ -95,7 +95,7 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
-  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.28;
+  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.42;
   private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
   // MegaTag1 is the full AprilTag pose solve that can contribute both translation
   // and rotation corrections. We keep this toggle in the code so the team can
@@ -617,12 +617,13 @@ public class Limelight_Pose extends SubsystemBase {
    * when ambiguity grows.
    */
   private double calculateXYStdDev(PoseEstimate estimate, boolean usingMegaTag1) {
-    // Start from a moderate baseline so clean tag frames can noticeably tug the
-    // estimator back toward reality instead of being drowned out by wheel drift.
-    double xyStdDev = 1.10;
+    // Start from a slightly more aggressive baseline so accepted AprilTag frames
+    // can pull translational drift back in faster when the raw vision solve is
+    // consistently better than wheel-only odometry.
+    double xyStdDev = 0.90;
 
     if (estimate.tagCount >= 2) {
-      xyStdDev -= 0.25;
+      xyStdDev -= 0.30;
     }
 
     if (estimate.tagCount >= 3) {
@@ -630,7 +631,7 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     if (estimate.avgTagArea >= 0.20) {
-      xyStdDev -= 0.20;
+      xyStdDev -= 0.25;
     }
 
     if (estimate.avgTagArea < 0.30) {
@@ -638,11 +639,11 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     if (estimate.avgTagArea >= 0.35) {
-      xyStdDev -= 0.10;
+      xyStdDev -= 0.12;
     }
 
     if (estimate.avgTagArea >= 0.50) {
-      xyStdDev -= 0.10;
+      xyStdDev -= 0.12;
     }
 
     if (estimate.avgTagDist > 3.0) {
@@ -660,7 +661,7 @@ public class Limelight_Pose extends SubsystemBase {
     if (!usingMegaTag1) {
       // MegaTag2 translation is useful, but we stay a little more conservative than
       // a strong MegaTag1 solution.
-      xyStdDev += 0.15;
+      xyStdDev += 0.08;
     }
 
     // Fast motion makes camera measurements less reliable, so we automatically
@@ -676,7 +677,7 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev -= STATIONARY_XY_STD_DEV_BONUS;
     }
 
-    return clamp(xyStdDev, 0.35, 2.40);
+    return clamp(xyStdDev, 0.30, 2.40);
   }
 
   /**

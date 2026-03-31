@@ -48,9 +48,6 @@ public class AutonFieldPreview {
 
     if (!normalizedAutoName.equals(m_lastAutoName) || shouldFlip != m_lastShouldFlip) {
       loadAutoPreview(normalizedAutoName, shouldFlip);
-      if (DriverStation.isDisabled() && m_previewStartingPose != null) {
-        drivetrain.resetPose(m_previewStartingPose);
-      }
       m_lastAutoName = normalizedAutoName;
       m_lastShouldFlip = shouldFlip;
     }
