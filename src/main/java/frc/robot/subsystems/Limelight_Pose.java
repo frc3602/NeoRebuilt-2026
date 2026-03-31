@@ -713,7 +713,7 @@ public class Limelight_Pose extends SubsystemBase {
     // Start from a slightly more aggressive baseline so accepted AprilTag frames
     // can pull translational drift back in faster when the raw vision solve is
     // consistently better than wheel-only odometry.
-    double xyStdDev = 0.90;
+    double xyStdDev = 0.80;
 
     if (estimate.tagCount >= 2) {
       xyStdDev -= 0.30;
@@ -740,11 +740,11 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     if (estimate.avgTagDist > 3.0) {
-      xyStdDev += 0.25;
+      xyStdDev += 0.15;
     }
 
     if (estimate.avgTagDist > 4.5) {
-      xyStdDev += 0.40;
+      xyStdDev += 0.25;
     }
 
     if (getMaxAmbiguity(estimate) > 0.25) {
@@ -754,7 +754,7 @@ public class Limelight_Pose extends SubsystemBase {
     if (!usingMegaTag1) {
       // MegaTag2 translation is useful, but we stay a little more conservative than
       // a strong MegaTag1 solution.
-      xyStdDev += 0.08;
+      xyStdDev += 0.02;
     }
 
     // Fast motion makes camera measurements less reliable, so we automatically
