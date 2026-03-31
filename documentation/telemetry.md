@@ -35,6 +35,7 @@ Telemetry publishing in `ElasticTelemetry` is intentionally throttled to avoid e
 - `HeadingDegrees`
 - `XYStdDev`
 - `ThetaStdDev`
+- `PoseUpdateCount`
 
 These are the currently selected vision values, not the full left and right camera debug set.
 

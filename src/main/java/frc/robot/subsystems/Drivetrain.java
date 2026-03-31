@@ -27,6 +27,7 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
     private final SwerveRequest.ApplyRobotSpeeds autoRobotDrive = new SwerveRequest.ApplyRobotSpeeds();
     private final Limelight_Pose limelightPose = Limelight_Pose.getInstance();
+    private long visionPoseUpdateCount = 0;
 
     public Drivetrain(
             SwerveDrivetrainConstants drivetrainConstants,
@@ -55,6 +56,10 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
     public Pose2d getEstimatedPose() {
         return getState().Pose;
+    }
+
+    public long getVisionPoseUpdateCount() {
+        return visionPoseUpdateCount;
     }
 
     public void configPathplanner() {
@@ -102,7 +107,9 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
             linearSpeedMetersPerSecond
         );
 
-        for (AcceptedVisionMeasurement measurement : limelightPose.getAcceptedMeasurements()) {
+        var acceptedMeasurements = limelightPose.getAcceptedMeasurements();
+
+        for (AcceptedVisionMeasurement measurement : acceptedMeasurements) {
             addVisionMeasurement(
                 measurement.poseEstimate.pose,
                 measurement.poseEstimate.timestampSeconds,
@@ -112,9 +119,17 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
                     measurement.thetaStdDev
                 )
             );
+            visionPoseUpdateCount++;
         }
 
-        if (!limelightPose.getAcceptedMeasurements().isEmpty()) {
+        Pose2d visionResetCandidate = limelightPose.getDrivePoseVisionResetCandidate();
+        if (visionResetCandidate != null) {
+            resetPose(visionResetCandidate);
+            limelightPose.markDrivePoseVisionResetApplied();
+            visionPoseUpdateCount++;
+        }
+
+        if (!acceptedMeasurements.isEmpty()) {
             limelightPose.UpdateVisionCorrectionAdded();
         }
     }

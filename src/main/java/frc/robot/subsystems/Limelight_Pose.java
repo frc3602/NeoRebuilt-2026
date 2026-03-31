@@ -97,6 +97,16 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
   private static final double STATIONARY_XY_STD_DEV_BONUS = 0.42;
   private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
+  private static final double VISION_RESET_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.08;
+  private static final double VISION_RESET_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 6.0;
+  private static final double MAX_VISION_RESET_MEASUREMENT_AGE_SECONDS = 0.20;
+  private static final double MIN_VISION_RESET_TRANSLATION_ERROR_METERS = 0.45;
+  private static final double MAX_VISION_RESET_TRANSLATION_ERROR_METERS = 2.50;
+  private static final int MIN_VISION_RESET_TAG_COUNT = 2;
+  private static final double MIN_VISION_RESET_AVG_TAG_AREA = 0.15;
+  private static final double MAX_VISION_RESET_AMBIGUITY = 0.20;
+  private static final double MAX_VISION_RESET_CAMERA_DISAGREEMENT_METERS = 0.35;
+  private static final double VISION_RESET_COOLDOWN_SECONDS = 0.75;
   // MegaTag1 is the full AprilTag pose solve that can contribute both translation
   // and rotation corrections. We keep this toggle in the code so the team can
   // temporarily disable MegaTag1 during troubleshooting without rewriting the
@@ -147,6 +157,7 @@ public class Limelight_Pose extends SubsystemBase {
 
   private CameraMeasurementDecision cam1Decision = new CameraMeasurementDecision();
   private CameraMeasurementDecision cam2Decision = new CameraMeasurementDecision();
+  private double lastVisionResetTimeSeconds = Double.NEGATIVE_INFINITY;
 
   /** Creates the subsystem object that manages Limelight pose updates. */
   public Limelight_Pose() {
@@ -259,6 +270,77 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     return acceptedMeasurements;
+  }
+
+  /**
+   * Returns a strong stationary vision pose that is safe to use as a direct
+   * drivetrain reset.
+   *
+   * We only allow this when the robot is nearly still and the accepted vision
+   * solve is both fresh and high-quality. This gives us a fast way to pull the
+   * drivetrain estimator back to reality after a bad seed or odometry drift
+   * without letting weak vision frames jerk the robot pose around.
+   */
+  public Pose2d getDrivePoseVisionResetCandidate() {
+    if (!poseUpdateAvailable || poseCamEstimate == null || !driveStateAvailable) {
+      return null;
+    }
+
+    double nowSeconds = Timer.getFPGATimestamp();
+    if (nowSeconds - lastVisionResetTimeSeconds < VISION_RESET_COOLDOWN_SECONDS) {
+      return null;
+    }
+
+    if (Math.abs(currentDriveYawRate) > VISION_RESET_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND
+        || Math.abs(currentDriveLinearSpeedMetersPerSecond) > VISION_RESET_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND) {
+      return null;
+    }
+
+    CameraMeasurementDecision selectedDecision = choosePreferredDecision();
+    if (selectedDecision == null || !selectedDecision.acceptedMeasurement || selectedDecision.selectedEstimate == null) {
+      return null;
+    }
+
+    double measurementAgeSeconds = Math.max(0.0, nowSeconds - selectedDecision.selectedEstimate.timestampSeconds);
+    if (measurementAgeSeconds > MAX_VISION_RESET_MEASUREMENT_AGE_SECONDS) {
+      return null;
+    }
+
+    double translationErrorMeters = selectedDecision.selectedEstimate.pose.getTranslation()
+        .getDistance(currentDrivePose.getTranslation());
+    if (translationErrorMeters < MIN_VISION_RESET_TRANSLATION_ERROR_METERS
+        || translationErrorMeters > MAX_VISION_RESET_TRANSLATION_ERROR_METERS) {
+      return null;
+    }
+
+    if (selectedDecision.tagCount < MIN_VISION_RESET_TAG_COUNT
+        || selectedDecision.avgTagArea < MIN_VISION_RESET_AVG_TAG_AREA
+        || selectedDecision.maxAmbiguity > MAX_VISION_RESET_AMBIGUITY) {
+      return null;
+    }
+
+    if (!acceptedCamerasAgreeForReset()) {
+      return null;
+    }
+
+    Pose2d visionPose = selectedDecision.selectedEstimate.pose;
+    if (selectedDecision.usingMegaTag2) {
+      // MegaTag2 translation is helpful here, but we still keep the drivetrain's
+      // current heading because MT2 rotation is intentionally treated as untrusted.
+      return new Pose2d(visionPose.getTranslation(), currentDrivePose.getRotation());
+    }
+
+    return visionPose;
+  }
+
+  /**
+   * Records that the drivetrain used a direct vision reset this loop.
+   *
+   * The cooldown keeps one good frame from repeatedly resetting the estimator on
+   * consecutive loops while the robot is already settled.
+   */
+  public void markDrivePoseVisionResetApplied() {
+    lastVisionResetTimeSeconds = Timer.getFPGATimestamp();
   }
 
   /**
@@ -450,6 +532,23 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     return cam1Decision;
+  }
+
+  /**
+   * Returns whether both accepted cameras agree closely enough for a direct reset.
+   *
+   * If both Limelights are available, we require them to be in rough agreement
+   * before we let either one hard-reset the drivetrain pose.
+   */
+  private boolean acceptedCamerasAgreeForReset() {
+    if (cam1Decision.acceptedMeasurement && cam1Decision.selectedEstimate != null
+        && cam2Decision.acceptedMeasurement && cam2Decision.selectedEstimate != null) {
+      double cameraDisagreementMeters = cam1Decision.selectedEstimate.pose.getTranslation()
+          .getDistance(cam2Decision.selectedEstimate.pose.getTranslation());
+      return cameraDisagreementMeters <= MAX_VISION_RESET_CAMERA_DISAGREEMENT_METERS;
+    }
+
+    return true;
   }
 
   /**

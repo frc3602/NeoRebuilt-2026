@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.IntegerPublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
@@ -48,6 +49,7 @@ public class ElasticTelemetry {
   private final DoublePublisher m_visionHeadingDegreesPublisher;
   private final DoublePublisher m_visionXYStdDevPublisher;
   private final DoublePublisher m_visionThetaStdDevPublisher;
+  private final IntegerPublisher m_visionPoseUpdateCountPublisher;
   private final StructPublisher<Pose2d> m_visionPosePublisher;
   private final BooleanPublisher m_autoShooterReadyPublisher;
   private final BooleanPublisher m_autoTurretAndShooterReadyPublisher;
@@ -119,6 +121,7 @@ public class ElasticTelemetry {
     m_visionHeadingDegreesPublisher = visionTable.getDoubleTopic("HeadingDegrees").publish();
     m_visionXYStdDevPublisher = visionTable.getDoubleTopic("XYStdDev").publish();
     m_visionThetaStdDevPublisher = visionTable.getDoubleTopic("ThetaStdDev").publish();
+    m_visionPoseUpdateCountPublisher = visionTable.getIntegerTopic("PoseUpdateCount").publish();
     m_visionPosePublisher = visionTable.getStructTopic("Pose", Pose2d.struct).publish();
 
     m_autoShooterReadyPublisher = autoTable.getBooleanTopic("ShooterReady").publish();
@@ -194,6 +197,7 @@ public class ElasticTelemetry {
     m_poseYPublisher.set(pose.getY());
     m_headingDegreesPublisher.set(pose.getRotation().getDegrees());
     m_posePublisher.set(pose);
+    m_visionPoseUpdateCountPublisher.set(drivetrain.getVisionPoseUpdateCount());
 
     if (m_limelightPose.poseUpdateAvailable && m_limelightPose.poseCamEstimate != null) {
       Pose2d visionPose = m_limelightPose.poseCamEstimate.pose;
