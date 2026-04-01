@@ -168,12 +168,12 @@ public class Shooter extends SubsystemBase {
         feedbackConfigs.SensorToMechanismRatio = ShooterConstants.kShooterSensorToMechanismRatio;
 
         var slot0Configs = new Slot0Configs();
-        slot0Configs.kS = 0.25;
-        slot0Configs.kV = 0.39;
-        slot0Configs.kA = 0.0;
-        slot0Configs.kP = 0.11;
-        slot0Configs.kI = 0.0;
-        slot0Configs.kD = 0.0;
+        slot0Configs.kS = ShooterConstants.kShooterVelocityKS;
+        slot0Configs.kV = ShooterConstants.kShooterVelocityKV;
+        slot0Configs.kA = ShooterConstants.kShooterVelocityKA;
+        slot0Configs.kP = ShooterConstants.kShooterVelocityKP;
+        slot0Configs.kI = ShooterConstants.kShooterVelocityKI;
+        slot0Configs.kD = ShooterConstants.kShooterVelocityKD;
 
         var motionMagicConfigs = new MotionMagicConfigs();
         motionMagicConfigs.MotionMagicAcceleration =
