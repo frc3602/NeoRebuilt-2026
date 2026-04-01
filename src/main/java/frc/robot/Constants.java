@@ -18,7 +18,7 @@ public final class Constants {
         private static final double kLegacyShooterVelocityKI = 0.0;
         private static final double kLegacyShooterVelocityKD = 0.0;
         private static final double kLegacyShooterVelocityKS = 0.25;
-        private static final double kLegacyShooterVelocityKV = 0.1677;
+        private static final double kLegacyShooterVelocityKV = 0.139;
         private static final double kLegacyShooterVelocityKA = 0.0;
         private static final double kLegacyShooterAccelerationRotationsPerSecondSquared = 600.0;
         private static final double kLegacyShooterJerkRotationsPerSecondCubed = 6000.0;

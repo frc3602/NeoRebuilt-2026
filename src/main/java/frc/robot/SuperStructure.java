@@ -64,7 +64,7 @@ public class SuperStructure {
             Commands.runEnd(
                 () -> {
                     if (!hasStartedFeeding[0]
-                            && isTurretAndShooterReadyForShot()) {
+                            && isTurretAndShooterReadyToFeedShot()) {
                         hasStartedFeeding[0] = true;
                     }
 
@@ -99,8 +99,17 @@ public class SuperStructure {
         return shooter.isNearTargetVelocityMagnitude(kTrackedShotReadyToleranceRotationsPerSecond);
     }
 
+    private boolean isShooterReadyToFeedShot() {
+        return shooter.isAtOrAboveTargetVelocityMagnitude(
+            kTrackedShotReadyToleranceRotationsPerSecond);
+    }
+
     public boolean isTurretAndShooterReadyForShot() {
         return turret.atTarget() && isShooterReadyForShot();
+    }
+
+    private boolean isTurretAndShooterReadyToFeedShot() {
+        return turret.atTarget() && isShooterReadyToFeedShot();
     }
 
     public boolean isShooterNearTargetVelocitySigned() {
@@ -112,7 +121,7 @@ public class SuperStructure {
     }
 
     public boolean isTrackedLerpShotFeedReady() {
-        return isShooterReadyForShot();
+        return isShooterReadyToFeedShot();
     }
 
     public Command shootTrackedLerpShot() {
@@ -133,7 +142,7 @@ public class SuperStructure {
 
     public boolean isTrackedPassCornerShotFeedReady() {
         return turret.isInCenterField()
-            && isShooterReadyForShot();
+            && isShooterReadyToFeedShot();
     }
 
     public Command shootTrackedPassCornerShot() {
@@ -247,7 +256,7 @@ public class SuperStructure {
     public Command autonShootFailsafeShot() {
         return Commands.sequence(
             autonPrepareFailsafeShot(),
-            Commands.waitUntil(this::isShooterReadyForShot),
+            Commands.waitUntil(this::isShooterReadyToFeedShot),
             autonFeedShot());
     }
 
