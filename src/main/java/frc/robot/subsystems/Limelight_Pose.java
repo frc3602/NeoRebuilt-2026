@@ -77,31 +77,31 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
   // These thresholds stay a little conservative so the drivetrain estimator keeps
   // carrying more of the pose solution once tags get smaller or farther away.
-  private static final double MIN_MT2_TAG_AREA = 0.015;
+  private static final double MIN_MT2_TAG_AREA = 0.010;
   private static final double MIN_MT1_TAG_AREA = 0.08;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 10.0;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 11.5;
   private static final double MAX_MT1_TAG_DISTANCE_METERS = 8.0;
-  private static final double MAX_MT2_AMBIGUITY = 0.85;
+  private static final double MAX_MT2_AMBIGUITY = 0.90;
   private static final double MAX_MT1_AMBIGUITY = 0.50;
   private static final double MAX_LATENCY_MILLISECONDS = 250.0;
   private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.35;
   private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 4.5;
-  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 8.0;
+  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 9.0;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 70.0;
-  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.025;
-  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 8.0;
-  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.75;
-  private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.015;
-  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 9.0;
-  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.70;
+  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.020;
+  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 9.0;
+  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.80;
+  private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.010;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 10.0;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.75;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
-  private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.25;
-  private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 18.0;
-  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.72;
-  private static final double STRONG_STATIONARY_MT2_XY_STD_DEV_BONUS = 0.38;
-  private static final double MIN_STRONG_STATIONARY_MT2_SINGLE_TAG_AREA = 0.06;
-  private static final double MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_DISTANCE_METERS = 6.5;
-  private static final double MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_AMBIGUITY = 0.45;
+  private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.35;
+  private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 24.0;
+  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.82;
+  private static final double STRONG_STATIONARY_MT2_XY_STD_DEV_BONUS = 0.45;
+  private static final double MIN_STRONG_STATIONARY_MT2_SINGLE_TAG_AREA = 0.05;
+  private static final double MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_DISTANCE_METERS = 7.5;
+  private static final double MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_AMBIGUITY = 0.50;
   private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
   private static final double VISION_RESET_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.08;
   private static final double VISION_RESET_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 6.0;
@@ -109,13 +109,13 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MIN_VISION_RESET_TRANSLATION_ERROR_METERS = 0.20;
   private static final double MAX_VISION_RESET_TRANSLATION_ERROR_METERS = 2.50;
   private static final int MIN_VISION_RESET_TAG_COUNT = 2;
-  private static final double MIN_VISION_RESET_AVG_TAG_AREA = 0.06;
-  private static final double MAX_VISION_RESET_AMBIGUITY = 0.35;
-  private static final double MIN_VISION_RESET_SINGLE_TAG_AREA = 0.18;
-  private static final double MAX_VISION_RESET_SINGLE_TAG_DISTANCE_METERS = 5.5;
-  private static final double MAX_VISION_RESET_SINGLE_TAG_AMBIGUITY = 0.20;
+  private static final double MIN_VISION_RESET_AVG_TAG_AREA = 0.04;
+  private static final double MAX_VISION_RESET_AMBIGUITY = 0.40;
+  private static final double MIN_VISION_RESET_SINGLE_TAG_AREA = 0.14;
+  private static final double MAX_VISION_RESET_SINGLE_TAG_DISTANCE_METERS = 6.5;
+  private static final double MAX_VISION_RESET_SINGLE_TAG_AMBIGUITY = 0.25;
   private static final double MAX_VISION_RESET_CAMERA_DISAGREEMENT_METERS = 0.35;
-  private static final double VISION_RESET_COOLDOWN_SECONDS = 0.35;
+  private static final double VISION_RESET_COOLDOWN_SECONDS = 0.20;
   // MegaTag1 is currently disabled so the robot runs MT2-only vision updates
   // until the team has a reason to reintroduce MT1 on the field.
   private static final boolean ALLOW_MEGATAG1_UPDATES = false;
@@ -728,35 +728,35 @@ public class Limelight_Pose extends SubsystemBase {
     // Start from a slightly more aggressive baseline so accepted AprilTag frames
     // can pull translational drift back in faster when the raw vision solve is
     // consistently better than wheel-only odometry.
-    double xyStdDev = 0.50;
+    double xyStdDev = 0.38;
     double maxAmbiguity = getMaxAmbiguity(estimate);
 
     if (estimate.tagCount >= 2) {
-      xyStdDev -= 0.35;
+      xyStdDev -= 0.38;
     }
 
     if (estimate.tagCount >= 3) {
-      xyStdDev -= 0.12;
-    }
-
-    if (estimate.avgTagArea >= 0.05) {
-      xyStdDev -= 0.06;
-    }
-
-    if (estimate.avgTagArea >= 0.10) {
-      xyStdDev -= 0.10;
-    }
-
-    if (estimate.avgTagArea >= 0.20) {
       xyStdDev -= 0.14;
     }
 
+    if (estimate.avgTagArea >= 0.05) {
+      xyStdDev -= 0.08;
+    }
+
+    if (estimate.avgTagArea >= 0.10) {
+      xyStdDev -= 0.12;
+    }
+
+    if (estimate.avgTagArea >= 0.20) {
+      xyStdDev -= 0.16;
+    }
+
     if (estimate.avgTagArea < 0.08) {
-      xyStdDev += 0.06;
+      xyStdDev += 0.04;
     }
 
     if (estimate.avgTagArea < 0.18) {
-      xyStdDev += 0.04;
+      xyStdDev += 0.02;
     }
 
     if (estimate.avgTagArea >= 0.35) {
@@ -767,22 +767,22 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev -= 0.12;
     }
 
-    if (estimate.avgTagDist > 5.0) {
-      xyStdDev += 0.06;
+    if (estimate.avgTagDist > 6.0) {
+      xyStdDev += 0.04;
     }
 
-    if (estimate.avgTagDist > 7.5) {
-      xyStdDev += 0.10;
+    if (estimate.avgTagDist > 9.0) {
+      xyStdDev += 0.08;
     }
 
     if (maxAmbiguity > 0.25) {
-      xyStdDev += 0.12;
+      xyStdDev += 0.08;
     }
 
     // Fast motion makes camera measurements less reliable, so we automatically
     // trust them a little less when the drivetrain is moving aggressively.
-    xyStdDev += Math.abs(currentDriveYawRate) * 0.002;
-    xyStdDev += Math.abs(currentDriveLinearSpeedMetersPerSecond) * 0.08;
+    xyStdDev += Math.abs(currentDriveYawRate) * 0.0015;
+    xyStdDev += Math.abs(currentDriveLinearSpeedMetersPerSecond) * 0.06;
 
     // When the robot is sitting still, a clean AprilTag frame should pull the pose
     // estimate in faster. This helps dashboard aim angles and turret tracking
@@ -807,7 +807,7 @@ public class Limelight_Pose extends SubsystemBase {
       }
     }
 
-    return clamp(xyStdDev, 0.10, 2.40);
+    return clamp(xyStdDev, 0.05, 2.40);
   }
 
   private boolean isDriveNearlyStationary(double yawRateThresholdDegreesPerSecond,
