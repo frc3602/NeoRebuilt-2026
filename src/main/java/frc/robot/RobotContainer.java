@@ -42,6 +42,7 @@ public class RobotContainer {
     private static final String kLeftTrenchDepotAutoName = "Left Trench, Depot";
     private static final String kShootTestAutoName = "Shoot Test";
     private static final String kRightTrenchOutpostAutoName = "Right Trench, Outpost";
+    private static final String kRightTrenchOutpostCenterAutoName = "Right Trench, Outpost, Center";
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second                                                                             // max angular velocity
     private final SwerveRequest.FieldCentric drive =
@@ -154,6 +155,7 @@ public class RobotContainer {
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kLeftTrenchDepotAutoName);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kShootTestAutoName);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kRightTrenchOutpostAutoName);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kRightTrenchOutpostCenterAutoName);
   }
 
   private void addRequestedAutoOption(
