@@ -86,7 +86,7 @@ public class TunerConstants {
 
     private static final double kDriveGearRatio = 5.357142857142857;
     private static final double kSteerGearRatio = 21.428571428571427;
-    private static final Distance kWheelRadius = Inches.of(2);
+    private static final Distance kWheelRadius = Inches.of(1.875);
     private static final double kWheelCOF = 1.2;
     private static final Mass kRobotMass = Kilograms.of(56.0);
     private static final MomentOfInertia kRobotMOI = KilogramSquareMeters.of(6.0);
