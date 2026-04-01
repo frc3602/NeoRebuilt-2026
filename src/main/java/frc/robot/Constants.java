@@ -247,6 +247,11 @@ public final class Constants {
         public static final double kTurretMinimumLookaheadSeconds = 0.05;
         public static final double kTurretTranslationalLeadGain = 1.0;
         public static final double kTurretRotationalLeadGain = 1.0;
+        // Scale the turret's Motion Magic profile up as chassis translation speed rises so
+        // tracking stays snappy while driving, but remains tame when the robot is mostly still.
+        public static final double kTurretDriveMotionVelocityScaleAtFullSpeed = 1.5;
+        public static final double kTurretDriveMotionAccelerationScaleAtFullSpeed = 2.0;
+        public static final double kTurretDriveMotionJerkScaleAtFullSpeed = 2.0;
         public static final double kCenterFieldXMinMeters = 6.0;
         public static final double kCenterFieldXMaxMeters = 10.5;
     }

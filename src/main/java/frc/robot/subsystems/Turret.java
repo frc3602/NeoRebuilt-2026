@@ -1,13 +1,16 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.DynamicMotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -17,10 +20,16 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Constants.TurretConstants;
+import frc.robot.generated.TunerConstants;
 
 public class Turret extends SubsystemBase {
     private final TalonFX turretMotor = new TalonFX(TurretConstants.kTurretMotorID);
-    private final MotionMagicVoltage positionRequest = new MotionMagicVoltage(0);
+    private final DynamicMotionMagicVoltage positionRequest =
+        new DynamicMotionMagicVoltage(
+            0,
+            TurretConstants.kTurretCruiseVelocityRotationsPerSecond,
+            TurretConstants.kTurretAccelerationRotationsPerSecondSquared)
+                .withJerk(TurretConstants.kTurretJerkRotationsPerSecondCubed);
     private final Drivetrain drivetrain;
 
     private double requestedAngleDegrees = TurretConstants.kTurretStartAngleDegrees;
@@ -61,8 +70,25 @@ public class Turret extends SubsystemBase {
         requestedAngleDegrees = normalizeSignedAngleDegrees(targetAngleDegrees);
         requestedUnwrappedAngleDegrees =
             chooseFrontSafeUnwrappedTarget(getTurretUnwrappedAngleDegrees(), requestedAngleDegrees);
+        double driveTranslationSpeedScale = getDriveTranslationSpeedScale();
         turretMotor.setControl(
-            positionRequest.withPosition(degreesToRotorRotations(requestedUnwrappedAngleDegrees)));
+            positionRequest
+                .withPosition(degreesToRotorRotations(requestedUnwrappedAngleDegrees))
+                .withVelocity(
+                    TurretConstants.kTurretCruiseVelocityRotationsPerSecond
+                        * interpolateMotionScale(
+                            driveTranslationSpeedScale,
+                            TurretConstants.kTurretDriveMotionVelocityScaleAtFullSpeed))
+                .withAcceleration(
+                    TurretConstants.kTurretAccelerationRotationsPerSecondSquared
+                        * interpolateMotionScale(
+                            driveTranslationSpeedScale,
+                            TurretConstants.kTurretDriveMotionAccelerationScaleAtFullSpeed))
+                .withJerk(
+                    TurretConstants.kTurretJerkRotationsPerSecondCubed
+                        * interpolateMotionScale(
+                            driveTranslationSpeedScale,
+                            TurretConstants.kTurretDriveMotionJerkScaleAtFullSpeed)));
     }
 
     public Command setTurretAngleCommand(double targetAngleDegrees) {
@@ -239,6 +265,28 @@ public class Turret extends SubsystemBase {
     private void seedStartAngle() {
         turretMotor.setPosition(
             degreesToRotorRotations(TurretConstants.kTurretStartAngleDegrees));
+    }
+
+    private double getDriveTranslationSpeedScale() {
+        var chassisSpeeds = drivetrain.getState().Speeds;
+        double driveTranslationSpeedMetersPerSecond = Math.hypot(
+            chassisSpeeds.vxMetersPerSecond,
+            chassisSpeeds.vyMetersPerSecond);
+        double maxDriveSpeedMetersPerSecond = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+
+        if (maxDriveSpeedMetersPerSecond <= 1e-6) {
+            return 0.0;
+        }
+
+        return MathUtil.clamp(
+            driveTranslationSpeedMetersPerSecond / maxDriveSpeedMetersPerSecond,
+            0.0,
+            1.0);
+    }
+
+    private double interpolateMotionScale(double normalizedDriveSpeed,
+            double fullSpeedMotionScale) {
+        return 1.0 + normalizedDriveSpeed * (fullSpeedMotionScale - 1.0);
     }
 
     private Translation2d getCurrentHubTranslation() {
