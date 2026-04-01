@@ -245,13 +245,16 @@ public final class Constants {
         public static final double kTurretShotToleranceDegrees = 5.0;
         public static final double kTurretProjectileSpeedMetersPerSecond = 12.0;
         public static final double kTurretMinimumLookaheadSeconds = 0.05;
-        public static final double kTurretTranslationalLeadGain = 1.0;
+        // Values above 1.0 intentionally bias the turret farther opposite the robot's
+        // translation so the note's inherited chassis velocity does not carry it ahead
+        // of the target while strafing or driving.
+        public static final double kTurretTranslationalLeadGain = 1.75;
         public static final double kTurretRotationalLeadGain = 1.0;
         // Scale the turret's Motion Magic profile up as chassis translation speed rises so
         // tracking stays snappy while driving, but remains tame when the robot is mostly still.
-        public static final double kTurretDriveMotionVelocityScaleAtFullSpeed = 1.5;
-        public static final double kTurretDriveMotionAccelerationScaleAtFullSpeed = 2.0;
-        public static final double kTurretDriveMotionJerkScaleAtFullSpeed = 2.0;
+        public static final double kTurretDriveMotionVelocityScaleAtFullSpeed = 2.25;
+        public static final double kTurretDriveMotionAccelerationScaleAtFullSpeed = 3.5;
+        public static final double kTurretDriveMotionJerkScaleAtFullSpeed = 3.5;
         // Give the turret additional authority while the chassis is yawing so it can keep up
         // with a continuously moving field-relative target instead of catching up after rotation
         // stops. This matches the driver's configured 0.75 rotations/sec max turn rate.

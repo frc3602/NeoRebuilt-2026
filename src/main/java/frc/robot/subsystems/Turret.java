@@ -162,14 +162,22 @@ public class Turret extends SubsystemBase {
 
     private double calculateAimAngleDegrees(Translation2d targetTranslation) {
         Pose2d robotPose = drivetrain.getEstimatedPose();
-        Translation2d robotTranslation = robotPose.getTranslation();
+        return calculateAimAngleDegrees(
+            targetTranslation,
+            robotPose.getTranslation(),
+            robotPose.getRotation().getDegrees());
+    }
 
+    private double calculateAimAngleDegrees(
+            Translation2d targetTranslation,
+            Translation2d robotTranslation,
+            double robotHeadingDegrees) {
         double fieldAngleDegrees = Math.toDegrees(
             Math.atan2(
                 targetTranslation.getY() - robotTranslation.getY(),
                 targetTranslation.getX() - robotTranslation.getX()));
         double robotRelativeCounterClockwiseDegrees =
-            normalizeSignedAngleDegrees(fieldAngleDegrees - robotPose.getRotation().getDegrees());
+            normalizeSignedAngleDegrees(fieldAngleDegrees - robotHeadingDegrees);
 
         // Turret commands use clockwise-positive angles, opposite WPILib's
         // counterclockwise-positive rotation convention.
@@ -200,31 +208,20 @@ public class Turret extends SubsystemBase {
             chassisSpeeds.vyMetersPerSecond).rotateBy(robotPose.getRotation());
 
         double lookaheadSeconds = calculateBallTimeOfFlightSeconds(distanceToTargetMeters);
+        Translation2d predictedRobotTranslation = robotTranslation.plus(
+            fieldRelativeVelocity.times(
+                lookaheadSeconds * TurretConstants.kTurretTranslationalLeadGain));
+        double predictedRobotHeadingDegrees =
+            robotPose.getRotation().getDegrees()
+                + Math.toDegrees(
+                    chassisSpeeds.omegaRadiansPerSecond
+                        * lookaheadSeconds
+                        * TurretConstants.kTurretRotationalLeadGain);
 
-        Translation2d shotDirectionUnit = robotToTarget.div(distanceToTargetMeters);
-        Translation2d lateralDirectionUnit = new Translation2d(
-            -shotDirectionUnit.getY(),
-            shotDirectionUnit.getX());
-
-        double lateralVelocityMetersPerSecond =
-            fieldRelativeVelocity.getX() * lateralDirectionUnit.getX()
-                + fieldRelativeVelocity.getY() * lateralDirectionUnit.getY();
-        double translationalLeadDegrees = Math.toDegrees(
-            Math.atan2(
-                lateralVelocityMetersPerSecond
-                    * lookaheadSeconds
-                    * TurretConstants.kTurretTranslationalLeadGain,
-                distanceToTargetMeters));
-
-        double rotationalLeadDegrees =
-            Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond)
-                * lookaheadSeconds
-                * TurretConstants.kTurretRotationalLeadGain;
-
-        return normalizeSignedAngleDegrees(
-            calculateAimAngleDegrees(targetTranslation)
-                - translationalLeadDegrees
-                - rotationalLeadDegrees);
+        return calculateAimAngleDegrees(
+            targetTranslation,
+            predictedRobotTranslation,
+            predictedRobotHeadingDegrees);
     }
 
     public Command aimAtHubCommand() {
