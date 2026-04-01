@@ -208,20 +208,40 @@ public final class Constants {
     }
 
     public static final class TurretConstants {
+        private static final double kTurretOutputStageRatio = 10.0;
+        private static final double kLegacyTurretGearboxRatio = 9.0;
+        private static final double kTurretGearboxRatio = 3.0;
+        private static final double kLegacyTurretGearRatio =
+            kLegacyTurretGearboxRatio * kTurretOutputStageRatio;
+        private static final double kLegacyTurretKP = 18.0;
+        private static final double kLegacyTurretCruiseVelocityRotationsPerSecond = 85.0;
+        private static final double kLegacyTurretAccelerationRotationsPerSecondSquared = 335.0;
+        private static final double kLegacyTurretJerkRotationsPerSecondCubed = 1670.0;
+
         //Motor ID
         public static final int kTurretMotorID = 9;
         public static final int kTurretEncoderID = 10;
 
-        public static final double kTurretGearRatio = 90.0;
+        // The turret kept the same 10:1 output stage and swapped the gearbox from 9:1 to 3:1.
+        public static final double kTurretGearRatio = kTurretGearboxRatio * kTurretOutputStageRatio;
         public static final double kTurretCurrentLimit = 50.0;
         public static final double kTurretStartAngleDegrees = -90.0;
-        public static final double kTurretKP = 18.0;
+        // Scale the closed-loop tune from the old 90:1 reduction so the turret stays controllable
+        // after the gearbox swap changes how many motor rotations correspond to each turret degree.
+        public static final double kTurretKP = kLegacyTurretKP
+            * (kLegacyTurretGearRatio / kTurretGearRatio);
         public static final double kTurretKI = 0.0;
         public static final double kTurretKD = 0.0;
         public static final double kTurretKG = 0.0;
-        public static final double kTurretCruiseVelocityRotationsPerSecond = 85.0;
-        public static final double kTurretAccelerationRotationsPerSecondSquared = 335.0;
-        public static final double kTurretJerkRotationsPerSecondCubed = 1670.0;
+        public static final double kTurretCruiseVelocityRotationsPerSecond =
+            kLegacyTurretCruiseVelocityRotationsPerSecond
+                * (kTurretGearRatio / kLegacyTurretGearRatio);
+        public static final double kTurretAccelerationRotationsPerSecondSquared =
+            kLegacyTurretAccelerationRotationsPerSecondSquared
+                * (kTurretGearRatio / kLegacyTurretGearRatio);
+        public static final double kTurretJerkRotationsPerSecondCubed =
+            kLegacyTurretJerkRotationsPerSecondCubed
+                * (kTurretGearRatio / kLegacyTurretGearRatio);
         public static final double kTurretPositionToleranceDegrees = 2.0;
         public static final double kTurretProjectileSpeedMetersPerSecond = 12.0;
         public static final double kTurretMinimumLookaheadSeconds = 0.05;
