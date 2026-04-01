@@ -77,28 +77,31 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
   // These thresholds stay a little conservative so the drivetrain estimator keeps
   // carrying more of the pose solution once tags get smaller or farther away.
-  private static final double MIN_MT2_TAG_AREA = 0.05;
+  private static final double MIN_MT2_TAG_AREA = 0.03;
   private static final double MIN_MT1_TAG_AREA = 0.08;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 6.0;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 7.5;
   private static final double MAX_MT1_TAG_DISTANCE_METERS = 8.0;
-  private static final double MAX_MT2_AMBIGUITY = 0.60;
+  private static final double MAX_MT2_AMBIGUITY = 0.70;
   private static final double MAX_MT1_AMBIGUITY = 0.50;
   private static final double MAX_LATENCY_MILLISECONDS = 250.0;
   private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.35;
   private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 4.5;
   private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 5.5;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 70.0;
-  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.08;
-  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 4.75;
-  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.50;
-  private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.05;
-  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 5.75;
-  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.45;
+  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.05;
+  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 6.0;
+  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.60;
+  private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.03;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 7.0;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.55;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
-  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.50;
-  private static final double STRONG_STATIONARY_MT2_XY_STD_DEV_BONUS = 0.18;
+  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.60;
+  private static final double STRONG_STATIONARY_MT2_XY_STD_DEV_BONUS = 0.28;
+  private static final double MIN_STRONG_STATIONARY_MT2_SINGLE_TAG_AREA = 0.10;
+  private static final double MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_DISTANCE_METERS = 5.0;
+  private static final double MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_AMBIGUITY = 0.35;
   private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
   private static final double VISION_RESET_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.08;
   private static final double VISION_RESET_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 6.0;
@@ -106,8 +109,11 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MIN_VISION_RESET_TRANSLATION_ERROR_METERS = 0.20;
   private static final double MAX_VISION_RESET_TRANSLATION_ERROR_METERS = 2.50;
   private static final int MIN_VISION_RESET_TAG_COUNT = 2;
-  private static final double MIN_VISION_RESET_AVG_TAG_AREA = 0.15;
-  private static final double MAX_VISION_RESET_AMBIGUITY = 0.20;
+  private static final double MIN_VISION_RESET_AVG_TAG_AREA = 0.10;
+  private static final double MAX_VISION_RESET_AMBIGUITY = 0.25;
+  private static final double MIN_VISION_RESET_SINGLE_TAG_AREA = 0.30;
+  private static final double MAX_VISION_RESET_SINGLE_TAG_DISTANCE_METERS = 3.75;
+  private static final double MAX_VISION_RESET_SINGLE_TAG_AMBIGUITY = 0.10;
   private static final double MAX_VISION_RESET_CAMERA_DISAGREEMENT_METERS = 0.35;
   private static final double VISION_RESET_COOLDOWN_SECONDS = 0.75;
   // MegaTag1 is currently disabled so the robot runs MT2-only vision updates
@@ -314,9 +320,7 @@ public class Limelight_Pose extends SubsystemBase {
       return null;
     }
 
-    if (selectedDecision.tagCount < MIN_VISION_RESET_TAG_COUNT
-        || selectedDecision.avgTagArea < MIN_VISION_RESET_AVG_TAG_AREA
-        || selectedDecision.maxAmbiguity > MAX_VISION_RESET_AMBIGUITY) {
+    if (!passesVisionResetQualityGate(selectedDecision)) {
       return null;
     }
 
@@ -724,7 +728,7 @@ public class Limelight_Pose extends SubsystemBase {
     // Start from a slightly more aggressive baseline so accepted AprilTag frames
     // can pull translational drift back in faster when the raw vision solve is
     // consistently better than wheel-only odometry.
-    double xyStdDev = 0.80;
+    double xyStdDev = 0.72;
     double maxAmbiguity = getMaxAmbiguity(estimate);
 
     if (estimate.tagCount >= 2) {
@@ -735,12 +739,16 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev -= 0.10;
     }
 
-    if (estimate.avgTagArea >= 0.20) {
-      xyStdDev -= 0.25;
+    if (estimate.avgTagArea >= 0.10) {
+      xyStdDev -= 0.08;
     }
 
-    if (estimate.avgTagArea < 0.30) {
-      xyStdDev += 0.15;
+    if (estimate.avgTagArea >= 0.20) {
+      xyStdDev -= 0.18;
+    }
+
+    if (estimate.avgTagArea < 0.18) {
+      xyStdDev += 0.10;
     }
 
     if (estimate.avgTagArea >= 0.35) {
@@ -751,22 +759,16 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev -= 0.12;
     }
 
-    if (estimate.avgTagDist > 3.0) {
-      xyStdDev += 0.15;
+    if (estimate.avgTagDist > 4.0) {
+      xyStdDev += 0.10;
     }
 
-    if (estimate.avgTagDist > 4.5) {
-      xyStdDev += 0.25;
+    if (estimate.avgTagDist > 6.0) {
+      xyStdDev += 0.18;
     }
 
     if (maxAmbiguity > 0.25) {
-      xyStdDev += 0.25;
-    }
-
-    if (!usingMegaTag1) {
-      // MegaTag2 translation is useful, but we stay a little more conservative than
-      // a strong MegaTag1 solution.
-      xyStdDev += 0.02;
+      xyStdDev += 0.18;
     }
 
     // Fast motion makes camera measurements less reliable, so we automatically
@@ -789,21 +791,36 @@ public class Limelight_Pose extends SubsystemBase {
       boolean strongStationaryMT2Frame = !usingMegaTag1
           && (estimate.tagCount >= 2
               || (estimate.tagCount == 1
-                  && estimate.avgTagArea >= MIN_MT2_STATIONARY_SINGLE_TAG_AREA
-                  && estimate.avgTagDist <= MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS
-                  && maxAmbiguity <= MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY));
+                  && estimate.avgTagArea >= MIN_STRONG_STATIONARY_MT2_SINGLE_TAG_AREA
+                  && estimate.avgTagDist <= MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_DISTANCE_METERS
+                  && maxAmbiguity <= MAX_STRONG_STATIONARY_MT2_SINGLE_TAG_AMBIGUITY));
       if (strongStationaryMT2Frame) {
         xyStdDev -= STRONG_STATIONARY_MT2_XY_STD_DEV_BONUS;
       }
     }
 
-    return clamp(xyStdDev, 0.30, 2.40);
+    return clamp(xyStdDev, 0.20, 2.40);
   }
 
   private boolean isDriveNearlyStationary(double yawRateThresholdDegreesPerSecond,
       double linearSpeedThresholdMetersPerSecond) {
     return Math.abs(currentDriveYawRate) <= yawRateThresholdDegreesPerSecond
         && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= linearSpeedThresholdMetersPerSecond;
+  }
+
+  private boolean passesVisionResetQualityGate(CameraMeasurementDecision decision) {
+    if (decision.tagCount >= MIN_VISION_RESET_TAG_COUNT) {
+      return decision.avgTagArea >= MIN_VISION_RESET_AVG_TAG_AREA
+          && decision.maxAmbiguity <= MAX_VISION_RESET_AMBIGUITY;
+    }
+
+    // A very large, very low-ambiguity single tag can still be good enough for a
+    // stationary translation reset. This gives the estimator a faster "snap back"
+    // when the robot is parked close to one tag instead of waiting to see two.
+    return decision.tagCount == 1
+        && decision.avgTagArea >= MIN_VISION_RESET_SINGLE_TAG_AREA
+        && decision.avgTagDist <= MAX_VISION_RESET_SINGLE_TAG_DISTANCE_METERS
+        && decision.maxAmbiguity <= MAX_VISION_RESET_SINGLE_TAG_AMBIGUITY;
   }
 
   /**
