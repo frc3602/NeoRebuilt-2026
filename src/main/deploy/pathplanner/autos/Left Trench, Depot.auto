@@ -1,0 +1,37 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left Trench, Depot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "RaisePivot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Depot, Left Alliance"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutonShootTrackedShot"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
