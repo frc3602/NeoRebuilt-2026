@@ -47,6 +47,17 @@
           "name": "DropPivot"
         }
       }
+    },
+    {
+      "name": "AutonRunIntake",
+      "waypointRelativePos": 0.5752869682646882,
+      "endWaypointRelativePos": 1.0,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "AutonRunIntake"
+        }
+      }
     }
   ],
   "globalConstraints": {

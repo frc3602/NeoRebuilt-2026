@@ -5,9 +5,21 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "DropPivot"
+          }
+        },
+        {
           "type": "path",
           "data": {
-            "pathName": "Right Trench, Outpost"
+            "pathName": "Right Trench, Center"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center, Right Alliance"
           }
         },
         {
@@ -33,7 +45,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 4.0
+                        "waitTime": 3.5
                       }
                     },
                     {
@@ -47,17 +59,11 @@
               }
             ]
           }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Outpost, Center"
-          }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": "Feild Ready Autons",
+  "folder": null,
   "choreoAuto": false
 }
