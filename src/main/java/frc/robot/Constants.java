@@ -252,6 +252,14 @@ public final class Constants {
         public static final double kTurretDriveMotionVelocityScaleAtFullSpeed = 1.5;
         public static final double kTurretDriveMotionAccelerationScaleAtFullSpeed = 2.0;
         public static final double kTurretDriveMotionJerkScaleAtFullSpeed = 2.0;
+        // Give the turret additional authority while the chassis is yawing so it can keep up
+        // with a continuously moving field-relative target instead of catching up after rotation
+        // stops. This matches the driver's configured 0.75 rotations/sec max turn rate.
+        public static final double kTurretMaxChassisAngularRateRadiansPerSecond =
+            0.75 * 2.0 * Math.PI;
+        public static final double kTurretRotateMotionVelocityScaleAtFullYawRate = 2.0;
+        public static final double kTurretRotateMotionAccelerationScaleAtFullYawRate = 3.0;
+        public static final double kTurretRotateMotionJerkScaleAtFullYawRate = 3.0;
         public static final double kCenterFieldXMinMeters = 6.0;
         public static final double kCenterFieldXMaxMeters = 10.5;
     }

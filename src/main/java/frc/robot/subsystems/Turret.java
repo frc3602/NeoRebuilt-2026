@@ -70,25 +70,18 @@ public class Turret extends SubsystemBase {
         requestedAngleDegrees = normalizeSignedAngleDegrees(targetAngleDegrees);
         requestedUnwrappedAngleDegrees =
             chooseFrontSafeUnwrappedTarget(getTurretUnwrappedAngleDegrees(), requestedAngleDegrees);
-        double driveTranslationSpeedScale = getDriveTranslationSpeedScale();
         turretMotor.setControl(
             positionRequest
                 .withPosition(degreesToRotorRotations(requestedUnwrappedAngleDegrees))
                 .withVelocity(
                     TurretConstants.kTurretCruiseVelocityRotationsPerSecond
-                        * interpolateMotionScale(
-                            driveTranslationSpeedScale,
-                            TurretConstants.kTurretDriveMotionVelocityScaleAtFullSpeed))
+                        * getCurrentDriveMotionVelocityScale())
                 .withAcceleration(
                     TurretConstants.kTurretAccelerationRotationsPerSecondSquared
-                        * interpolateMotionScale(
-                            driveTranslationSpeedScale,
-                            TurretConstants.kTurretDriveMotionAccelerationScaleAtFullSpeed))
+                        * getCurrentDriveMotionAccelerationScale())
                 .withJerk(
                     TurretConstants.kTurretJerkRotationsPerSecondCubed
-                        * interpolateMotionScale(
-                            driveTranslationSpeedScale,
-                            TurretConstants.kTurretDriveMotionJerkScaleAtFullSpeed)));
+                        * getCurrentDriveMotionJerkScale()));
     }
 
     public Command setTurretAngleCommand(double targetAngleDegrees) {
@@ -267,7 +260,37 @@ public class Turret extends SubsystemBase {
             degreesToRotorRotations(TurretConstants.kTurretStartAngleDegrees));
     }
 
-    private double getDriveTranslationSpeedScale() {
+    private double getCurrentDriveMotionVelocityScale() {
+        return Math.max(
+            interpolateMotionScale(
+                getNormalizedChassisTranslationSpeed(),
+                TurretConstants.kTurretDriveMotionVelocityScaleAtFullSpeed),
+            interpolateMotionScale(
+                getNormalizedChassisYawRate(),
+                TurretConstants.kTurretRotateMotionVelocityScaleAtFullYawRate));
+    }
+
+    private double getCurrentDriveMotionAccelerationScale() {
+        return Math.max(
+            interpolateMotionScale(
+                getNormalizedChassisTranslationSpeed(),
+                TurretConstants.kTurretDriveMotionAccelerationScaleAtFullSpeed),
+            interpolateMotionScale(
+                getNormalizedChassisYawRate(),
+                TurretConstants.kTurretRotateMotionAccelerationScaleAtFullYawRate));
+    }
+
+    private double getCurrentDriveMotionJerkScale() {
+        return Math.max(
+            interpolateMotionScale(
+                getNormalizedChassisTranslationSpeed(),
+                TurretConstants.kTurretDriveMotionJerkScaleAtFullSpeed),
+            interpolateMotionScale(
+                getNormalizedChassisYawRate(),
+                TurretConstants.kTurretRotateMotionJerkScaleAtFullYawRate));
+    }
+
+    private double getNormalizedChassisTranslationSpeed() {
         var chassisSpeeds = drivetrain.getState().Speeds;
         double driveTranslationSpeedMetersPerSecond = Math.hypot(
             chassisSpeeds.vxMetersPerSecond,
@@ -280,6 +303,21 @@ public class Turret extends SubsystemBase {
 
         return MathUtil.clamp(
             driveTranslationSpeedMetersPerSecond / maxDriveSpeedMetersPerSecond,
+            0.0,
+            1.0);
+    }
+
+    private double getNormalizedChassisYawRate() {
+        double maxChassisYawRateRadiansPerSecond =
+            TurretConstants.kTurretMaxChassisAngularRateRadiansPerSecond;
+
+        if (maxChassisYawRateRadiansPerSecond <= 1e-6) {
+            return 0.0;
+        }
+
+        return MathUtil.clamp(
+            Math.abs(drivetrain.getState().Speeds.omegaRadiansPerSecond)
+                / maxChassisYawRateRadiansPerSecond,
             0.0,
             1.0);
     }
