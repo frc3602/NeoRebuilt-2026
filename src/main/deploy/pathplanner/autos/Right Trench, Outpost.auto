@@ -1,0 +1,43 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right Trench, Outpost"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "RaisePivot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutonReverseSpindexerHalfSecond"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutonShootTrackedShot"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
