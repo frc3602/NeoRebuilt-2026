@@ -23,7 +23,7 @@ public final class Constants {
         private static final double kLegacyShooterAccelerationRotationsPerSecondSquared = 600.0;
         private static final double kLegacyShooterJerkRotationsPerSecondCubed = 6000.0;
         private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
-        private static final double kOverallShotVelocityScale = 1.22;
+        private static final double kOverallShotVelocityScale = 1.20;
         private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond =
             44.0 * kOverallShotVelocityScale;
         private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond =
@@ -256,10 +256,9 @@ public final class Constants {
         public static final int kSpindexerMotorID = 12;
         public static final int kReceiveMotorID = 11;
 
-        // Feed path ratios off shooter target speed:
-        // spindexer is slowest, receiver is faster, shooter is fastest.
-        public static final double kSpindexerSpeedRatioToShooter = 0.75;
-        public static final double kReceiverSpeedRatioToShooter = 0.60;
+        // Feed path ratios off shooter target speed.
+        public static final double kSpindexerSpeedRatioToShooter = 0.60;
+        public static final double kReceiverSpeedRatioToShooter = 0.48;
         public static final double kSpindexerVelocityRotationsPerSecond =
             -ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
                 * kSpindexerSpeedRatioToShooter;
