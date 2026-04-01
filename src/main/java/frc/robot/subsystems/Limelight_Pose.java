@@ -77,9 +77,9 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
   // These thresholds stay a little conservative so the drivetrain estimator keeps
   // carrying more of the pose solution once tags get smaller or farther away.
-  private static final double MIN_MT2_TAG_AREA = 0.010;
+  private static final double MIN_MT2_TAG_AREA = 0.007;
   private static final double MIN_MT1_TAG_AREA = 0.08;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 11.5;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 12.5;
   private static final double MAX_MT1_TAG_DISTANCE_METERS = 8.0;
   private static final double MAX_MT2_AMBIGUITY = 0.90;
   private static final double MAX_MT1_AMBIGUITY = 0.50;
@@ -88,12 +88,12 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 4.5;
   private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 9.0;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 70.0;
-  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.020;
-  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 9.0;
-  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.80;
-  private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.010;
-  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 10.0;
-  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.75;
+  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.015;
+  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 10.0;
+  private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.82;
+  private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.007;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 11.0;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.78;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.35;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 24.0;
