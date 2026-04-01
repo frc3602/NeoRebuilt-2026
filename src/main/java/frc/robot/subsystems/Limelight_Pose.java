@@ -91,6 +91,9 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MIN_MT2_SINGLE_TAG_AREA = 0.015;
   private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 10.0;
   private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.82;
+  private static final double MIN_MT2_NEARBY_SINGLE_TAG_AREA = 0.007;
+  private static final double MAX_MT2_NEARBY_SINGLE_TAG_DISTANCE_METERS = 4.5;
+  private static final double MAX_MT2_NEARBY_SINGLE_TAG_AMBIGUITY = 0.86;
   private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.007;
   private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 11.0;
   private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.78;
@@ -617,13 +620,20 @@ public class Limelight_Pose extends SubsystemBase {
       boolean singleTagIsStrong = estimate.avgTagArea >= MIN_MT2_SINGLE_TAG_AREA
           && estimate.avgTagDist <= MAX_MT2_SINGLE_TAG_DISTANCE_METERS
           && maxAmbiguity <= MAX_MT2_SINGLE_TAG_AMBIGUITY;
+      // Let a nearby single tag start helping a little sooner even before it
+      // grows into our normal "strong single-tag" bucket. This specifically
+      // helps the robot begin correcting around the mid-3 meter range without
+      // broadly trusting distant, weak one-tag solves.
+      boolean nearbySingleTagIsUsable = estimate.avgTagArea >= MIN_MT2_NEARBY_SINGLE_TAG_AREA
+          && estimate.avgTagDist <= MAX_MT2_NEARBY_SINGLE_TAG_DISTANCE_METERS
+          && maxAmbiguity <= MAX_MT2_NEARBY_SINGLE_TAG_AMBIGUITY;
       boolean stationarySingleTagIsUsable = isDriveNearlyStationary(
           STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND,
           STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND)
           && estimate.avgTagArea >= MIN_MT2_STATIONARY_SINGLE_TAG_AREA
           && estimate.avgTagDist <= MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS
           && maxAmbiguity <= MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY;
-      return singleTagIsStrong || stationarySingleTagIsUsable;
+      return singleTagIsStrong || nearbySingleTagIsUsable || stationarySingleTagIsUsable;
     }
 
     return true;

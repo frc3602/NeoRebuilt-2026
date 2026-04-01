@@ -200,6 +200,8 @@ public class RobotContainer {
         "AutonWaitForTrackedShotReady", m_superStructure.autonWaitForTrackedShotReady());
     NamedCommands.registerCommand("AutonFeedShot", m_superStructure.autonFeedShot());
     NamedCommands.registerCommand(
+        "AutonReverseSpindexerHalfSecond", m_superStructure.autonReverseSpindexerHalfSecond());
+    NamedCommands.registerCommand(
         "AutonShootTrackedShot", m_superStructure.autonShootTrackedShot());
     NamedCommands.registerCommand(
         "AutonShootFailsafeShot", m_superStructure.autonShootFailsafeShot());

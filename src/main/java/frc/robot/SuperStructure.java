@@ -19,6 +19,7 @@ public class SuperStructure {
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 2.5;
     private static final double kTrackedShotFeedDelaySeconds = 0.50;
     private static final double kAutonFeedTimeSeconds = 3.5;
+    private static final double kAutonReverseSpindexerTimeSeconds = 0.5;
     private static final double kAutonIntakeTimeSeconds = 1.0;
 
     private final Turret turret;
@@ -229,6 +230,14 @@ public class SuperStructure {
             Commands.waitSeconds(kAutonFeedTimeSeconds),
             gatedFeedCommand(this::isTurretAndShooterReadyToFeedShot))
             .finallyDo(spindexer::stop);
+    }
+
+    public Command autonReverseSpindexerHalfSecond() {
+        return Commands.startEnd(
+            spindexer::feedReverse,
+            spindexer::stop,
+            spindexer)
+            .withTimeout(kAutonReverseSpindexerTimeSeconds);
     }
 
     public Command autonShootTrackedShot() {
