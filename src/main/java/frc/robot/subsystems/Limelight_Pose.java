@@ -91,15 +91,19 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MIN_MT2_SINGLE_TAG_AREA = 0.08;
   private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 4.75;
   private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.50;
+  private static final double MIN_MT2_STATIONARY_SINGLE_TAG_AREA = 0.05;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 5.75;
+  private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.45;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
-  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.42;
+  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.50;
+  private static final double STRONG_STATIONARY_MT2_XY_STD_DEV_BONUS = 0.18;
   private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
   private static final double VISION_RESET_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.08;
   private static final double VISION_RESET_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 6.0;
   private static final double MAX_VISION_RESET_MEASUREMENT_AGE_SECONDS = 0.20;
-  private static final double MIN_VISION_RESET_TRANSLATION_ERROR_METERS = 0.45;
+  private static final double MIN_VISION_RESET_TRANSLATION_ERROR_METERS = 0.20;
   private static final double MAX_VISION_RESET_TRANSLATION_ERROR_METERS = 2.50;
   private static final int MIN_VISION_RESET_TAG_COUNT = 2;
   private static final double MIN_VISION_RESET_AVG_TAG_AREA = 0.15;
@@ -602,12 +606,20 @@ public class Limelight_Pose extends SubsystemBase {
 
     // For tower aiming, a weak single-tag MegaTag2 solve usually hurts more than
     // it helps. We only accept one-tag MT2 frames when the tag is large, close,
-    // and very unambiguous.
+    // and very unambiguous. When the robot is already sitting still, we allow a
+    // slightly weaker one-tag frame through so the estimator can recover sooner
+    // in the field corners instead of waiting for a perfect multi-tag view.
     if (estimate.tagCount == 1) {
       boolean singleTagIsStrong = estimate.avgTagArea >= MIN_MT2_SINGLE_TAG_AREA
           && estimate.avgTagDist <= MAX_MT2_SINGLE_TAG_DISTANCE_METERS
           && maxAmbiguity <= MAX_MT2_SINGLE_TAG_AMBIGUITY;
-      return singleTagIsStrong;
+      boolean stationarySingleTagIsUsable = isDriveNearlyStationary(
+          STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND,
+          STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND)
+          && estimate.avgTagArea >= MIN_MT2_STATIONARY_SINGLE_TAG_AREA
+          && estimate.avgTagDist <= MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS
+          && maxAmbiguity <= MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY;
+      return singleTagIsStrong || stationarySingleTagIsUsable;
     }
 
     return true;
@@ -713,6 +725,7 @@ public class Limelight_Pose extends SubsystemBase {
     // can pull translational drift back in faster when the raw vision solve is
     // consistently better than wheel-only odometry.
     double xyStdDev = 0.80;
+    double maxAmbiguity = getMaxAmbiguity(estimate);
 
     if (estimate.tagCount >= 2) {
       xyStdDev -= 0.30;
@@ -746,7 +759,7 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev += 0.25;
     }
 
-    if (getMaxAmbiguity(estimate) > 0.25) {
+    if (maxAmbiguity > 0.25) {
       xyStdDev += 0.25;
     }
 
@@ -764,12 +777,33 @@ public class Limelight_Pose extends SubsystemBase {
     // When the robot is sitting still, a clean AprilTag frame should pull the pose
     // estimate in faster. This helps dashboard aim angles and turret tracking
     // settle promptly instead of visibly lagging behind the stationary camera view.
-    if (Math.abs(currentDriveYawRate) <= STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND
-        && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND) {
+    boolean driveIsStationary = isDriveNearlyStationary(
+        STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND,
+        STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND);
+    if (driveIsStationary) {
       xyStdDev -= STATIONARY_XY_STD_DEV_BONUS;
+
+      // A stationary MT2 frame that already meets our acceptance bar should pull
+      // the drivetrain estimate back in decisively so aiming does not need a long
+      // settle time after the robot stops near a tag.
+      boolean strongStationaryMT2Frame = !usingMegaTag1
+          && (estimate.tagCount >= 2
+              || (estimate.tagCount == 1
+                  && estimate.avgTagArea >= MIN_MT2_STATIONARY_SINGLE_TAG_AREA
+                  && estimate.avgTagDist <= MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS
+                  && maxAmbiguity <= MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY));
+      if (strongStationaryMT2Frame) {
+        xyStdDev -= STRONG_STATIONARY_MT2_XY_STD_DEV_BONUS;
+      }
     }
 
     return clamp(xyStdDev, 0.30, 2.40);
+  }
+
+  private boolean isDriveNearlyStationary(double yawRateThresholdDegreesPerSecond,
+      double linearSpeedThresholdMetersPerSecond) {
+    return Math.abs(currentDriveYawRate) <= yawRateThresholdDegreesPerSecond
+        && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= linearSpeedThresholdMetersPerSecond;
   }
 
   /**
