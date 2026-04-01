@@ -18,7 +18,7 @@ public class SuperStructure {
         ShooterConstants.kShooterTargetVelocityRotationsPerSecond;
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 2.5;
     private static final double kTrackedShotFeedDelaySeconds = 0.50;
-    private static final double kAutonFeedTimeSeconds = 4.5;
+    private static final double kAutonFeedTimeSeconds = 10;
     private static final double kAutonOutpostShootTimeSeconds = 10.0;
     private static final double kAutonReverseSpindexerTimeSeconds = 0.5;
     private static final double kAutonIntakeTimeSeconds = 1.0;
