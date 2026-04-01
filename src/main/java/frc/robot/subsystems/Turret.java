@@ -208,7 +208,7 @@ public class Turret extends SubsystemBase {
             chassisSpeeds.vyMetersPerSecond).rotateBy(robotPose.getRotation());
 
         double lookaheadSeconds = calculateBallTimeOfFlightSeconds(distanceToTargetMeters);
-        Translation2d predictedRobotTranslation = robotTranslation.minus(
+        Translation2d predictedRobotTranslation = robotTranslation.plus(
             fieldRelativeVelocity.times(
                 lookaheadSeconds * TurretConstants.kTurretTranslationalLeadGain));
         double predictedRobotHeadingDegrees =

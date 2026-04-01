@@ -245,9 +245,10 @@ public final class Constants {
         public static final double kTurretShotToleranceDegrees = 5.0;
         public static final double kTurretProjectileSpeedMetersPerSecond = 12.0;
         public static final double kTurretMinimumLookaheadSeconds = 0.05;
-        // Scales how strongly chassis translation offsets the virtual shot target while
-        // driving so we can tune note placement during strafing without retuning the
-        // rest of the turret motion profile.
+        // Scales how far ahead we project the robot's future translation when solving the
+        // shot angle. Larger values make the turret aim farther opposite the robot's
+        // current drive direction so the note's inherited chassis velocity lands closer
+        // to the tower while strafing.
         public static final double kTurretTranslationalLeadGain = 1.75;
         public static final double kTurretRotationalLeadGain = 1.0;
         // Scale the turret's Motion Magic profile up as chassis translation speed rises so
