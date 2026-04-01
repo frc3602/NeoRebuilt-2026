@@ -25,7 +25,32 @@
         {
           "type": "named",
           "data": {
+            "name": "AutonReverseSpindexerHalfSecond"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
             "name": "AutonShootTrackedShot"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "DropPivot"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "StopIntake"
+                }
+              }
+            ]
           }
         }
       ]
