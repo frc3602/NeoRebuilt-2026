@@ -7,7 +7,6 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
 
 public final class Constants {
     private Constants() {}
@@ -28,10 +27,25 @@ public final class Constants {
             44.0 * kOverallShotVelocityScale;
         private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond =
             legacyMotorRpsToMechanismRps(kLegacyShooterCommandMaxVelocityRotationsPerSecond);
-        private static final double kShooterGravityMetersPerSecondSquared = 9.80665;
-        private static final double kShooterLaunchAngleRadians = Math.toRadians(67.3);
-        private static final double kShooterLaunchCosine = Math.cos(kShooterLaunchAngleRadians);
-        private static final double kShooterLaunchTangent = Math.tan(kShooterLaunchAngleRadians);
+        private static final double kShooterLaunchAngleDegrees = 67.3;
+        private static final double kShooterLaunchCosine =
+            Math.cos(Math.toRadians(kShooterLaunchAngleDegrees));
+        // Seed the lerp table from the previous ballistic curve so this branch
+        // starts close to the robot's current behavior before Elastic tuning.
+        private static final double[][] kShooterDistanceVelocityLerpTable = {
+            { 1.00, 41.07 },
+            { 1.50, 42.47 },
+            { 2.00, 45.86 },
+            { 2.50, 49.44 },
+            { 2.98, 52.80 },
+            { 3.50, 56.29 },
+            { 4.00, 59.49 },
+            { 4.50, 62.55 },
+            { 5.00, 65.48 },
+            { 5.50, 68.30 },
+            { 6.00, 71.01 },
+            { 6.50, 73.62 }
+        };
 
         //Motor ID
         public static final int kShooterMotor1ID = 5;
@@ -60,17 +74,11 @@ public final class Constants {
             legacyMotorRpsToMechanismRps(kLegacyShooterAccelerationRotationsPerSecondSquared);
         public static final double kShooterJerkRotationsPerSecondCubed =
             legacyMotorRpsToMechanismRps(kLegacyShooterJerkRotationsPerSecondCubed);
-
-        public static final double kShooterExitHeightMeters = Units.inchesToMeters(20.5);
-        public static final double kHubCenterHeightMeters = Units.inchesToMeters(72.0);
-        public static final double kShooterLaunchAngleDegrees = 66.0;
-        public static final double kReferenceShotDistanceMeters = 2.98;
         public static final double kShooterMinimumLookaheadSeconds = 0.05;
-        public static final double kReferenceShotLaunchVelocityMetersPerSecond =
-            idealLaunchVelocityMetersPerSecondForDistanceMeters(kReferenceShotDistanceMeters);
+        // Preserves the previous reference-shot flight-time estimate while the
+        // distance-to-RPS curve is tuned empirically through the lerp table.
         public static final double kShooterExitSpeedMetersPerSecondPerRotationPerSecond =
-            kReferenceShotLaunchVelocityMetersPerSecond
-                / kReferenceShotVelocityMagnitudeRotationsPerSecond;
+            0.134289065;
 
         //Failsafe Speed
         public static final double kShooterFailsafeSpeed =
@@ -84,8 +92,23 @@ public final class Constants {
         }
 
         public static double ballTimeOfFlightSecondsForDistanceMeters(double distanceMeters) {
+            return ballTimeOfFlightSecondsForDistanceMeters(
+                distanceMeters,
+                shooterVelocityMagnitudeForDistanceMeters(distanceMeters));
+        }
+
+        public static double ballTimeOfFlightSecondsForDistanceMeters(
+                double distanceMeters,
+                double shooterVelocityMagnitudeRotationsPerSecond) {
+            if (!Double.isFinite(distanceMeters)
+                    || distanceMeters <= 0.0
+                    || !Double.isFinite(shooterVelocityMagnitudeRotationsPerSecond)) {
+                return kShooterMinimumLookaheadSeconds;
+            }
+
             double launchVelocityMetersPerSecond =
-                launchVelocityMetersPerSecondForDistanceMeters(distanceMeters);
+                launchVelocityMetersPerSecondForVelocityMagnitudeRotationsPerSecond(
+                    shooterVelocityMagnitudeRotationsPerSecond);
             double horizontalVelocityMetersPerSecond =
                 launchVelocityMetersPerSecond * kShooterLaunchCosine;
 
@@ -99,8 +122,8 @@ public final class Constants {
         }
 
         public static double launchVelocityMetersPerSecondForDistanceMeters(double distanceMeters) {
-            return shooterVelocityMagnitudeForDistanceMeters(distanceMeters)
-                * kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
+            return launchVelocityMetersPerSecondForVelocityMagnitudeRotationsPerSecond(
+                shooterVelocityMagnitudeForDistanceMeters(distanceMeters));
         }
 
         private static double legacyMotorRpsToMechanismRps(double legacyMotorRps) {
@@ -112,36 +135,38 @@ public final class Constants {
         }
 
         private static double shooterVelocityMagnitudeForDistanceMeters(double distanceMeters) {
-            double idealLaunchVelocityMetersPerSecond =
-                idealLaunchVelocityMetersPerSecondForDistanceMeters(distanceMeters);
-
-            if (!Double.isFinite(idealLaunchVelocityMetersPerSecond)
-                    || idealLaunchVelocityMetersPerSecond <= 0.0) {
+            if (!Double.isFinite(distanceMeters) || kShooterDistanceVelocityLerpTable.length == 0) {
                 return kReferenceShotVelocityMagnitudeRotationsPerSecond;
             }
 
-            return idealLaunchVelocityMetersPerSecond
-                / kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
-        }
-
-        private static double idealLaunchVelocityMetersPerSecondForDistanceMeters(
-                double distanceMeters) {
-            double heightDeltaMeters = kHubCenterHeightMeters - kShooterExitHeightMeters;
-            double denominator =
-                2.0
-                    * kShooterLaunchCosine
-                    * kShooterLaunchCosine
-                    * ((distanceMeters * kShooterLaunchTangent) - heightDeltaMeters);
-
-            if (distanceMeters <= 0.0 || denominator <= 1e-6) {
-                return Double.NaN;
+            double[] firstPoint = kShooterDistanceVelocityLerpTable[0];
+            if (distanceMeters <= firstPoint[0]) {
+                return firstPoint[1];
             }
 
-            return Math.sqrt(
-                kShooterGravityMetersPerSecondSquared
-                    * distanceMeters
-                    * distanceMeters
-                    / denominator);
+            for (int i = 1; i < kShooterDistanceVelocityLerpTable.length; i++) {
+                double[] lowerPoint = kShooterDistanceVelocityLerpTable[i - 1];
+                double[] upperPoint = kShooterDistanceVelocityLerpTable[i];
+
+                if (distanceMeters <= upperPoint[0]) {
+                    double distanceSpanMeters = upperPoint[0] - lowerPoint[0];
+                    if (distanceSpanMeters <= 1e-6) {
+                        return upperPoint[1];
+                    }
+
+                    double progress =
+                        (distanceMeters - lowerPoint[0]) / distanceSpanMeters;
+                    return lowerPoint[1] + ((upperPoint[1] - lowerPoint[1]) * progress);
+                }
+            }
+
+            return kShooterDistanceVelocityLerpTable[kShooterDistanceVelocityLerpTable.length - 1][1];
+        }
+
+        private static double launchVelocityMetersPerSecondForVelocityMagnitudeRotationsPerSecond(
+                double shooterVelocityMagnitudeRotationsPerSecond) {
+            return Math.abs(shooterVelocityMagnitudeRotationsPerSecond)
+                * kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
         }
     }
 

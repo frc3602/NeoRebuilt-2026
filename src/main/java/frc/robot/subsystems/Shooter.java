@@ -14,6 +14,8 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -22,9 +24,17 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
 
 public class Shooter extends SubsystemBase {
+    private static final String kElasticShooterVelocityOffsetTopicName =
+        "LerpVelocityMagnitudeOffsetRPS";
+
     private final TalonFX shooterLeader = new TalonFX(ShooterConstants.kShooterMotor1ID);
     private final TalonFX shooterFollower = new TalonFX(ShooterConstants.kShooterMotor2ID);
     private final Drivetrain drivetrain;
+    private final NetworkTableEntry shooterLerpVelocityMagnitudeOffsetEntry =
+        NetworkTableInstance.getDefault()
+            .getTable("Elastic")
+            .getSubTable("Shooter")
+            .getEntry(kElasticShooterVelocityOffsetTopicName);
 
     private final MotionMagicVelocityVoltage velocityRequest = new MotionMagicVelocityVoltage(0);
     private final VoltageOut stopRequest = new VoltageOut(0);
@@ -36,6 +46,7 @@ public class Shooter extends SubsystemBase {
 
     public Shooter(Drivetrain drivetrain) {
         this.drivetrain = drivetrain;
+        shooterLerpVelocityMagnitudeOffsetEntry.setDefaultDouble(0.0);
 
         configureMotor(shooterLeader);
         configureMotor(shooterFollower);
@@ -92,7 +103,7 @@ public class Shooter extends SubsystemBase {
 
     public void updateVelocityForCurrentDistance() {
         setVelocityRotationsPerSecond(
-            ShooterConstants.velocityForDistanceMeters(getCompensatedDistanceToHubMeters()));
+            getRequiredVelocityForDistanceMeters(getCompensatedDistanceToHubMeters()));
     }
 
     public void updateVelocityForTarget(Translation2d targetTranslation) {
@@ -100,7 +111,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public double getRequiredVelocityForTarget(Translation2d targetTranslation) {
-        return ShooterConstants.velocityForDistanceMeters(
+        return getRequiredVelocityForDistanceMeters(
             getCompensatedDistanceToTargetMeters(targetTranslation));
     }
 
@@ -144,7 +155,9 @@ public class Shooter extends SubsystemBase {
             chassisSpeeds.vyMetersPerSecond).rotateBy(robotPose.getRotation());
 
         double currentDistanceMeters = robotTranslation.getDistance(targetTranslation);
-        double lookaheadSeconds = calculateBallTimeOfFlightSeconds(currentDistanceMeters);
+        double lookaheadSeconds = calculateBallTimeOfFlightSeconds(
+            currentDistanceMeters,
+            getRequiredVelocityForDistanceMeters(currentDistanceMeters));
 
         // Recompute once from the predicted pose so the setpoint is based on where
         // the robot will be when the note reaches the target.
@@ -153,12 +166,37 @@ public class Shooter extends SubsystemBase {
         double predictedDistanceMeters = predictedTranslation.getDistance(targetTranslation);
 
         return predictedTranslation.plus(
-            fieldRelativeVelocity.times(calculateBallTimeOfFlightSeconds(predictedDistanceMeters)))
+            fieldRelativeVelocity.times(calculateBallTimeOfFlightSeconds(
+                predictedDistanceMeters,
+                getRequiredVelocityForDistanceMeters(predictedDistanceMeters))))
             .getDistance(targetTranslation);
     }
 
-    private double calculateBallTimeOfFlightSeconds(double distanceMeters) {
-        return ShooterConstants.ballTimeOfFlightSecondsForDistanceMeters(distanceMeters);
+    private double getRequiredVelocityForDistanceMeters(double distanceMeters) {
+        return applyDistanceShotVelocityOffset(
+            ShooterConstants.velocityForDistanceMeters(distanceMeters));
+    }
+
+    private double applyDistanceShotVelocityOffset(double baseVelocityRotationsPerSecond) {
+        double tunedVelocityMagnitudeRotationsPerSecond = Math.max(
+            0.0,
+            Math.abs(baseVelocityRotationsPerSecond)
+                + getLerpVelocityMagnitudeOffsetRotationsPerSecond());
+        return Math.copySign(
+            tunedVelocityMagnitudeRotationsPerSecond,
+            baseVelocityRotationsPerSecond);
+    }
+
+    private double calculateBallTimeOfFlightSeconds(
+            double distanceMeters,
+            double shooterVelocityRotationsPerSecond) {
+        return ShooterConstants.ballTimeOfFlightSecondsForDistanceMeters(
+            distanceMeters,
+            Math.abs(shooterVelocityRotationsPerSecond));
+    }
+
+    public double getLerpVelocityMagnitudeOffsetRotationsPerSecond() {
+        return shooterLerpVelocityMagnitudeOffsetEntry.getDouble(0.0);
     }
 
     private void configureMotor(TalonFX motor) {
