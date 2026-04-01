@@ -29,7 +29,7 @@ public final class Constants {
         private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond =
             legacyMotorRpsToMechanismRps(kLegacyShooterCommandMaxVelocityRotationsPerSecond);
         private static final double kShooterGravityMetersPerSecondSquared = 9.80665;
-        private static final double kShooterLaunchAngleRadians = Math.toRadians(68.0);
+        private static final double kShooterLaunchAngleRadians = Math.toRadians(67.0);
         private static final double kShooterLaunchCosine = Math.cos(kShooterLaunchAngleRadians);
         private static final double kShooterLaunchTangent = Math.tan(kShooterLaunchAngleRadians);
 
