@@ -249,7 +249,7 @@ public final class Constants {
         // shot angle. Larger values make the turret aim farther opposite the robot's
         // current drive direction so the note's inherited chassis velocity lands closer
         // to the tower while strafing.
-        public static final double kTurretTranslationalLeadGain = 1.75;
+        public static final double kTurretTranslationalLeadGain = 1.5;
         public static final double kTurretRotationalLeadGain = 1.0;
         // Scale the turret's Motion Magic profile up as chassis translation speed rises so
         // tracking stays snappy while driving, but remains tame when the robot is mostly still.
