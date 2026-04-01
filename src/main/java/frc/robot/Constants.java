@@ -307,12 +307,18 @@ public final class Constants {
         // reference points.
         public static final double kFieldLengthMeters = 16.55;
         public static final double kFieldWidthMeters = 8.05;
+        public static final double kFieldMidlineYMeters = kFieldWidthMeters / 2.0;
         public static final Translation2d kBlueTowerPosition = new Translation2d(4.634, 4.029);
         public static final Translation2d kRedTowerPosition = new Translation2d(11.919, 4.029);
         public static final Translation2d kBlueHubPosition = kBlueTowerPosition;
         public static final Translation2d kRedHubPosition = kRedTowerPosition;
-        public static final Translation2d kBluePassCornerPosition = new Translation2d(0.8, 7.25);
-        public static final Translation2d kRedPassCornerPosition =
-            new Translation2d(kFieldLengthMeters - 0.8, kFieldWidthMeters - 7.25);
+        public static final Translation2d kBlueRightPassCornerPosition =
+            new Translation2d(1.0, 1.0);
+        public static final Translation2d kBlueLeftPassCornerPosition =
+            new Translation2d(1.0, 7.0);
+        public static final Translation2d kRedRightPassCornerPosition =
+            new Translation2d(kFieldLengthMeters - 1.0, 1.0);
+        public static final Translation2d kRedLeftPassCornerPosition =
+            new Translation2d(kFieldLengthMeters - 1.0, 7.0);
     }
 }

@@ -143,9 +143,19 @@ public class Turret extends SubsystemBase {
     }
 
     public Translation2d getCurrentPassCornerTranslation() {
-        return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
-            ? FieldConstants.kRedPassCornerPosition
-            : FieldConstants.kBluePassCornerPosition;
+        boolean isOnLeftSideOfField =
+            drivetrain.getEstimatedPose().getY() >= FieldConstants.kFieldMidlineYMeters;
+        Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+
+        if (alliance == Alliance.Red) {
+            return isOnLeftSideOfField
+                ? FieldConstants.kRedLeftPassCornerPosition
+                : FieldConstants.kRedRightPassCornerPosition;
+        }
+
+        return isOnLeftSideOfField
+            ? FieldConstants.kBlueLeftPassCornerPosition
+            : FieldConstants.kBlueRightPassCornerPosition;
     }
 
     public String getAlignTargetMode() {
