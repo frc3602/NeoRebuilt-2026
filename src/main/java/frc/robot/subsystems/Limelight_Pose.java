@@ -75,12 +75,11 @@ public class Limelight_Pose extends SubsystemBase {
   // estimator. We keep the names explicit so students can connect the number with
   // the estimator behavior.
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
-  // These thresholds are intentionally forgiving so the drivetrain can actually
-  // benefit from AprilTag solves seen across a wider part of the field instead of
-  // dropping them for being slightly small, far, or delayed.
+  // These thresholds stay a little conservative so the drivetrain estimator keeps
+  // carrying more of the pose solution once tags get smaller or farther away.
   private static final double MIN_MT2_TAG_AREA = 0.05;
   private static final double MIN_MT1_TAG_AREA = 0.08;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 7.5;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 6.0;
   private static final double MAX_MT1_TAG_DISTANCE_METERS = 8.0;
   private static final double MAX_MT2_AMBIGUITY = 0.60;
   private static final double MAX_MT1_AMBIGUITY = 0.50;
@@ -89,8 +88,8 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 4.5;
   private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 5.5;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 70.0;
-  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.05;
-  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 6.0;
+  private static final double MIN_MT2_SINGLE_TAG_AREA = 0.08;
+  private static final double MAX_MT2_SINGLE_TAG_DISTANCE_METERS = 4.75;
   private static final double MAX_MT2_SINGLE_TAG_AMBIGUITY = 0.50;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
