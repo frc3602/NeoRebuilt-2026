@@ -1,8 +1,11 @@
 package frc.robot;
 
+import java.util.function.BooleanSupplier;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Pivot;
 import frc.robot.subsystems.Shooter;
@@ -56,27 +59,11 @@ public class SuperStructure {
     }
 
     public Command shootFailsafe() {
-        final boolean[] hasStartedFeeding = {false};
         return Commands.parallel(
             Commands.run(() -> turret.setTurretAngleDegrees(180.0), turret),
             Commands.run(() -> shooter.setVelocityRotationsPerSecond(
                 kFailsafeShooterVelocityRotationsPerSecond), shooter),
-            Commands.runEnd(
-                () -> {
-                    if (!hasStartedFeeding[0]
-                            && isTurretAndShooterReadyToFeedShot()) {
-                        hasStartedFeeding[0] = true;
-                    }
-
-                    if (hasStartedFeeding[0]) {
-                        spindexer.feedForward();
-                    }
-                },
-                () -> {
-                    hasStartedFeeding[0] = false;
-                    spindexer.stop();
-                },
-                spindexer));
+            gatedFeedCommand(this::isTurretAndShooterReadyToFeedShot));
     }
 
     public Command prepareFailsafeShot() {
@@ -104,12 +91,16 @@ public class SuperStructure {
             kTrackedShotReadyToleranceRotationsPerSecond);
     }
 
+    private boolean isTurretReadyForShot() {
+        return turret.isNearRequestedAngleDegrees(TurretConstants.kTurretShotToleranceDegrees);
+    }
+
     public boolean isTurretAndShooterReadyForShot() {
-        return turret.atTarget() && isShooterReadyForShot();
+        return isTurretReadyForShot() && isShooterReadyForShot();
     }
 
     private boolean isTurretAndShooterReadyToFeedShot() {
-        return turret.atTarget() && isShooterReadyToFeedShot();
+        return isTurretReadyForShot() && isShooterReadyToFeedShot();
     }
 
     public boolean isShooterNearTargetVelocitySigned() {
@@ -121,7 +112,7 @@ public class SuperStructure {
     }
 
     public boolean isTrackedLerpShotFeedReady() {
-        return isShooterReadyToFeedShot();
+        return isTurretAndShooterReadyToFeedShot();
     }
 
     public Command shootTrackedLerpShot() {
@@ -131,7 +122,7 @@ public class SuperStructure {
             Commands.sequence(
                 Commands.waitUntil(this::isTrackedLerpShotFeedReady),
                 Commands.waitSeconds(kTrackedShotFeedDelaySeconds),
-                Commands.run(spindexer::feedForward, spindexer)))
+                gatedFeedCommand(this::isTrackedLerpShotFeedReady)))
             .finallyDo(spindexer::stop);
     }
 
@@ -142,7 +133,7 @@ public class SuperStructure {
 
     public boolean isTrackedPassCornerShotFeedReady() {
         return turret.isInCenterField()
-            && isShooterReadyToFeedShot();
+            && isTurretAndShooterReadyToFeedShot();
     }
 
     public Command shootTrackedPassCornerShot() {
@@ -154,19 +145,23 @@ public class SuperStructure {
             Commands.sequence(
                 Commands.waitUntil(this::isTrackedPassCornerShotFeedReady),
                 Commands.waitSeconds(kTrackedShotFeedDelaySeconds),
-                Commands.run(
-                    () -> {
-                        if (isTrackedPassCornerShotFeedReady()) {
-                            spindexer.feedForward();
-                        } else {
-                            spindexer.stop();
-                        }
-                    },
-                    spindexer)))
+                gatedFeedCommand(this::isTrackedPassCornerShotFeedReady)))
             .finallyDo(() -> {
                 spindexer.stop();
                 shooter.stop();
             });
+    }
+
+    private Command gatedFeedCommand(BooleanSupplier isFeedReady) {
+        return Commands.run(
+            () -> {
+                if (isFeedReady.getAsBoolean()) {
+                    spindexer.feedForward();
+                } else {
+                    spindexer.stop();
+                }
+            },
+            spindexer);
     }
 
     public Command fixedShotCommand(double shooterVelocityRotationsPerSecond) {
@@ -232,7 +227,7 @@ public class SuperStructure {
     public Command autonFeedShot() {
         return Commands.deadline(
             Commands.waitSeconds(kAutonFeedTimeSeconds),
-            Commands.run(spindexer::feedForward, spindexer))
+            gatedFeedCommand(this::isTurretAndShooterReadyToFeedShot))
             .finallyDo(spindexer::stop);
     }
 
@@ -246,7 +241,7 @@ public class SuperStructure {
                 Commands.waitSeconds(kAutonFeedTimeSeconds),
                 turret.aimAtHubWithMotionCompCommand(),
                 Commands.run(shooter::updateVelocityForCurrentDistance, shooter),
-                Commands.run(spindexer::feedForward, spindexer))
+                gatedFeedCommand(this::isTrackedLerpShotFeedReady))
                 .finallyDo(() -> {
                     spindexer.stop();
                     shooter.stop();
@@ -256,7 +251,7 @@ public class SuperStructure {
     public Command autonShootFailsafeShot() {
         return Commands.sequence(
             autonPrepareFailsafeShot(),
-            Commands.waitUntil(this::isShooterReadyToFeedShot),
+            Commands.waitUntil(this::isTurretAndShooterReadyToFeedShot),
             autonFeedShot());
     }
 

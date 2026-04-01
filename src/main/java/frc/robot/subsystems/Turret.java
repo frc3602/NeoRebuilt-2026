@@ -46,8 +46,11 @@ public class Turret extends SubsystemBase {
     }
 
     public boolean atTarget() {
-        return Math.abs(requestedUnwrappedAngleDegrees - getTurretUnwrappedAngleDegrees())
-            <= TurretConstants.kTurretPositionToleranceDegrees;
+        return isNearRequestedAngleDegrees(TurretConstants.kTurretPositionToleranceDegrees);
+    }
+
+    public boolean isNearRequestedAngleDegrees(double toleranceDegrees) {
+        return Math.abs(getAngleErrorDegrees()) <= toleranceDegrees;
     }
 
     public double getAngleErrorDegrees() {
