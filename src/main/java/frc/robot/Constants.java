@@ -195,7 +195,7 @@ public final class Constants {
         public static final double kPivotCurrentLimit = 10;
         public static final double kPivotGearRatio = 125.0;
         public static final double kPivotSmartStepDegrees = 90.0;
-        public static final double kPivotRaiseDegrees = 20.0;
+        public static final double kPivotRaiseDegrees = 5.0;
         public static final double kPivotDropDegrees = 104.0;
         public static final double kPivotKP = 14.0;
         public static final double kPivotKI = 0.0;
