@@ -115,7 +115,7 @@ public class RobotContainer {
         .onTrue(m_superStructure.runIntake())
         .onFalse(m_superStructure.stopIntake());
 
-    m_driverController.rightTrigger()
+    m_operatorController.rightTrigger()
         .and(m_turret::isInCenterField)
         .whileTrue(m_superStructure.shootTrackedPassCornerShot())
         .onFalse(m_superStructure.stopShoot());
