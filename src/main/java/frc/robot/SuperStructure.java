@@ -19,6 +19,7 @@ public class SuperStructure {
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 2.5;
     private static final double kTrackedShotFeedDelaySeconds = 0.50;
     private static final double kAutonFeedTimeSeconds = 4.5;
+    private static final double kAutonOutpostShootTimeSeconds = 10.0;
     private static final double kAutonReverseSpindexerTimeSeconds = 0.5;
     private static final double kAutonIntakeTimeSeconds = 1.0;
 
@@ -251,6 +252,29 @@ public class SuperStructure {
                 turret.aimAtHubWithMotionCompCommand(),
                 Commands.run(shooter::updateVelocityForCurrentDistance, shooter),
                 gatedFeedCommand(this::isTrackedLerpShotFeedReady))
+                .finallyDo(() -> {
+                    spindexer.stop();
+                    shooter.stop();
+                }));
+    }
+
+    public Command autonOutpostShootCommand() {
+        return Commands.sequence(
+            Commands.deadline(
+                Commands.sequence(
+                    Commands.waitUntil(this::isTrackedPassCornerShotFeedReady),
+                    Commands.waitSeconds(kTrackedShotFeedDelaySeconds)),
+                turret.aimAtPassCornerWithMotionCompCommand(),
+                Commands.run(
+                    () -> shooter.updateVelocityForTarget(turret.getCurrentPassCornerTranslation()),
+                    shooter)),
+            Commands.deadline(
+                Commands.waitSeconds(kAutonOutpostShootTimeSeconds),
+                turret.aimAtPassCornerWithMotionCompCommand(),
+                Commands.run(
+                    () -> shooter.updateVelocityForTarget(turret.getCurrentPassCornerTranslation()),
+                    shooter),
+                gatedFeedCommand(this::isTrackedPassCornerShotFeedReady))
                 .finallyDo(() -> {
                     spindexer.stop();
                     shooter.stop();

@@ -206,6 +206,8 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "AutonShootTrackedShot", m_superStructure.autonShootTrackedShot());
     NamedCommands.registerCommand(
+        "AutonOutpostShootCommand", m_superStructure.autonOutpostShootCommand());
+    NamedCommands.registerCommand(
         "AutonShootFailsafeShot", m_superStructure.autonShootFailsafeShot());
     NamedCommands.registerCommand("AutonRunIntake", m_superStructure.autonRunIntake());
     NamedCommands.registerCommand(
