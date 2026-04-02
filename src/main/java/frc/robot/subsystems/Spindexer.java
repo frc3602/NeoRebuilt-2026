@@ -39,12 +39,17 @@ public class Spindexer extends SubsystemBase {
         setFeedVelocityRotationsPerSecond(-SpindexerConstants.kSpindexerVelocityRotationsPerSecond);
     }
 
+    public void feedForShooterVelocityRotationsPerSecond(double shooterVelocityRotationsPerSecond) {
+        setFeedVelocityRotationsPerSecond(
+            SpindexerConstants.spindexerVelocityForShooterVelocityRotationsPerSecond(
+                shooterVelocityRotationsPerSecond));
+    }
+
     public void setFeedVelocityRotationsPerSecond(double spindexerVelocityRotationsPerSecond) {
         spindexerTargetVelocityRotationsPerSecond = spindexerVelocityRotationsPerSecond;
         receiverTargetVelocityRotationsPerSecond =
-            spindexerVelocityRotationsPerSecond
-                * (SpindexerConstants.kReceiverSpeedRatioToShooter
-                    / SpindexerConstants.kSpindexerSpeedRatioToShooter);
+            SpindexerConstants.receiverVelocityForSpindexerVelocityRotationsPerSecond(
+                spindexerVelocityRotationsPerSecond);
         applyVelocityTargets(
             spindexerTargetVelocityRotationsPerSecond,
             receiverTargetVelocityRotationsPerSecond);

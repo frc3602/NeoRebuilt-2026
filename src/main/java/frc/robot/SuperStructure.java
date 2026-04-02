@@ -17,6 +17,7 @@ public class SuperStructure {
     private static final double kFailsafeShooterVelocityRotationsPerSecond =
         ShooterConstants.kShooterTargetVelocityRotationsPerSecond;
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 2.5;
+    private static final double kTrackedShotFeedToleranceRotationsPerSecond = 2.5;
     private static final double kTrackedShotFeedDelaySeconds = 0.50;
     private static final double kAutonFeedTimeSeconds = 10;
     private static final double kAutonOutpostShootTimeSeconds = 10.0;
@@ -89,8 +90,8 @@ public class SuperStructure {
     }
 
     private boolean isShooterReadyToFeedShot() {
-        return shooter.isAtOrAboveTargetVelocityMagnitude(
-            kTrackedShotReadyToleranceRotationsPerSecond);
+        return shooter.isNearTargetVelocityMagnitude(
+            kTrackedShotFeedToleranceRotationsPerSecond);
     }
 
     private boolean isTurretReadyForShot() {
@@ -139,6 +140,17 @@ public class SuperStructure {
             .finallyDo(spindexer::stop);
     }
 
+    public Command shootTrackedBackspinBallisticShot() {
+        return Commands.parallel(
+            turret.aimAtHubWithMotionCompCommand(),
+            shooter.runBackspinBallisticVelocityCommand(),
+            Commands.sequence(
+                Commands.waitUntil(this::isTrackedLerpShotFeedReady),
+                Commands.waitSeconds(kTrackedShotFeedDelaySeconds),
+                gatedFeedCommand(this::isTrackedLerpShotFeedReady)))
+            .finallyDo(spindexer::stop);
+    }
+
     public boolean isTrackedPassCornerShotReady() {
         return turret.isInCenterField()
             && isTurretAndShooterReadyForShot();
@@ -169,7 +181,8 @@ public class SuperStructure {
         return Commands.run(
             () -> {
                 if (isFeedReady.getAsBoolean()) {
-                    spindexer.feedForward();
+                    spindexer.feedForShooterVelocityRotationsPerSecond(
+                        shooter.getTargetVelocityRotationsPerSecond());
                 } else {
                     spindexer.stop();
                 }

@@ -111,7 +111,7 @@ public class RobotContainer {
         .onFalse(m_superStructure.stopShoot());
 
     m_operatorController.x()
-        .whileTrue(m_superStructure.shootTrackedSliderVelocityShot())
+        .whileTrue(m_superStructure.shootTrackedBackspinBallisticShot())
         .onFalse(m_superStructure.stopShoot());
 
     new Trigger(() -> m_operatorController.getHID().getBButton() && m_superStructure.isTrackedLerpShotReady())

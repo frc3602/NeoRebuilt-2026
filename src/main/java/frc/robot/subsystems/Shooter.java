@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.ShooterConstants;
+import java.util.function.DoubleUnaryOperator;
 
 public class Shooter extends SubsystemBase {
     private static final String kElasticShooterVelocityOffsetTopicName =
@@ -116,6 +117,13 @@ public class Shooter extends SubsystemBase {
             getRequiredVelocityForDistanceMeters(getCompensatedDistanceToHubMeters()));
     }
 
+    public void updateBackspinBallisticVelocityForCurrentDistance() {
+        setVelocityRotationsPerSecond(
+            getRequiredBackspinBallisticVelocityForDistanceMeters(
+                getCompensatedDistanceToHubMeters(
+                    this::getRequiredBackspinBallisticVelocityForDistanceMeters)));
+    }
+
     public void updateVelocityForTarget(Translation2d targetTranslation) {
         setVelocityRotationsPerSecond(getRequiredVelocityForTarget(targetTranslation));
     }
@@ -138,6 +146,10 @@ public class Shooter extends SubsystemBase {
         return runEnd(this::updateVelocityForCurrentDistance, this::stop);
     }
 
+    public Command runBackspinBallisticVelocityCommand() {
+        return runEnd(this::updateBackspinBallisticVelocityForCurrentDistance, this::stop);
+    }
+
     public void updateVelocityFromTrackedShotSlider() {
         setVelocityRotationsPerSecond(-getTrackedShotSliderVelocityMagnitudeRotationsPerSecond());
     }
@@ -148,6 +160,10 @@ public class Shooter extends SubsystemBase {
 
     public Command updateDistanceBasedVelocityOnceCommand() {
         return runOnce(this::updateVelocityForCurrentDistance);
+    }
+
+    public Command updateBackspinBallisticVelocityOnceCommand() {
+        return runOnce(this::updateBackspinBallisticVelocityForCurrentDistance);
     }
 
     public Command stopCommand() {
@@ -161,10 +177,25 @@ public class Shooter extends SubsystemBase {
     }
 
     private double getCompensatedDistanceToHubMeters() {
-        return getCompensatedDistanceToTargetMeters(getCurrentHubTranslation());
+        return getCompensatedDistanceToHubMeters(this::getRequiredVelocityForDistanceMeters);
+    }
+
+    private double getCompensatedDistanceToHubMeters(
+            DoubleUnaryOperator requiredVelocityForDistanceMetersSupplier) {
+        return getCompensatedDistanceToTargetMeters(
+            getCurrentHubTranslation(),
+            requiredVelocityForDistanceMetersSupplier);
     }
 
     private double getCompensatedDistanceToTargetMeters(Translation2d targetTranslation) {
+        return getCompensatedDistanceToTargetMeters(
+            targetTranslation,
+            this::getRequiredVelocityForDistanceMeters);
+    }
+
+    private double getCompensatedDistanceToTargetMeters(
+            Translation2d targetTranslation,
+            DoubleUnaryOperator requiredVelocityForDistanceMetersSupplier) {
         Pose2d robotPose = drivetrain.getEstimatedPose();
         Translation2d robotTranslation = robotPose.getTranslation();
         var chassisSpeeds = drivetrain.getState().Speeds;
@@ -175,7 +206,7 @@ public class Shooter extends SubsystemBase {
         double currentDistanceMeters = robotTranslation.getDistance(targetTranslation);
         double lookaheadSeconds = calculateBallTimeOfFlightSeconds(
             currentDistanceMeters,
-            getRequiredVelocityForDistanceMeters(currentDistanceMeters));
+            requiredVelocityForDistanceMetersSupplier.applyAsDouble(currentDistanceMeters));
 
         // Recompute once from the predicted pose so the setpoint is based on where
         // the robot will be when the note reaches the target.
@@ -186,7 +217,7 @@ public class Shooter extends SubsystemBase {
         return predictedTranslation.plus(
             fieldRelativeVelocity.times(calculateBallTimeOfFlightSeconds(
                 predictedDistanceMeters,
-                getRequiredVelocityForDistanceMeters(predictedDistanceMeters))))
+                requiredVelocityForDistanceMetersSupplier.applyAsDouble(predictedDistanceMeters))))
             .getDistance(targetTranslation);
     }
 
@@ -195,10 +226,16 @@ public class Shooter extends SubsystemBase {
             ShooterConstants.velocityForDistanceMeters(distanceMeters));
     }
 
+    private double getRequiredBackspinBallisticVelocityForDistanceMeters(double distanceMeters) {
+        return applyDistanceShotVelocityOffset(
+            ShooterConstants.backspinBallisticVelocityForDistanceMeters(distanceMeters));
+    }
+
     private double applyDistanceShotVelocityOffset(double baseVelocityRotationsPerSecond) {
         double tunedVelocityMagnitudeRotationsPerSecond = Math.max(
             0.0,
             Math.abs(baseVelocityRotationsPerSecond)
+                + ShooterConstants.kDistanceShotBaseVelocityTrimRotationsPerSecond
                 + getLerpVelocityMagnitudeOffsetRotationsPerSecond());
         return Math.copySign(
             tunedVelocityMagnitudeRotationsPerSecond,
