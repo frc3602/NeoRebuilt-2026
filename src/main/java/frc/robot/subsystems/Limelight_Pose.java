@@ -98,7 +98,7 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_MT2_STATIONARY_SINGLE_TAG_DISTANCE_METERS = 11.0;
   private static final double MAX_MT2_STATIONARY_SINGLE_TAG_AMBIGUITY = 0.78;
   private static final double MAX_MT2_SINGLE_TAG_YAW_RATE_DEGREES_PER_SECOND = 36.0;
-  private static final double MAX_MT2_SINGLE_TAG_LINEAR_SPEED_METERS_PER_SECOND = 0.50;
+  private static final double MAX_MT2_SINGLE_TAG_LINEAR_SPEED_METERS_PER_SECOND = 1.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.35;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 24.0;
