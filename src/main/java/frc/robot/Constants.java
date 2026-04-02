@@ -275,7 +275,8 @@ public final class Constants {
 
         // Feed path ratios off shooter target speed.
         public static final double kSpindexerSpeedRatioToShooter = 0.54;
-        public static final double kReceiverSpeedRatioToShooter = 0.432;
+        public static final double kReceiverSpeedRatioToShooter =
+            kSpindexerSpeedRatioToShooter * 1.10;
         public static final double kSpindexerVelocityRotationsPerSecond =
             -ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
                 * kSpindexerSpeedRatioToShooter;
