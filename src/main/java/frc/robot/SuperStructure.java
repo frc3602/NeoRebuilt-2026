@@ -128,6 +128,17 @@ public class SuperStructure {
             .finallyDo(spindexer::stop);
     }
 
+    public Command shootTrackedSliderVelocityShot() {
+        return Commands.parallel(
+            turret.aimAtHubWithMotionCompCommand(),
+            shooter.runTrackedShotSliderVelocityCommand(),
+            Commands.sequence(
+                Commands.waitUntil(this::isTrackedLerpShotFeedReady),
+                Commands.waitSeconds(kTrackedShotFeedDelaySeconds),
+                gatedFeedCommand(this::isTrackedLerpShotFeedReady)))
+            .finallyDo(spindexer::stop);
+    }
+
     public boolean isTrackedPassCornerShotReady() {
         return turret.isInCenterField()
             && isTurretAndShooterReadyForShot();
