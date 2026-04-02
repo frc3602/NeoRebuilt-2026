@@ -64,6 +64,6 @@
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Feild Ready Autons",
   "choreoAuto": false
 }
