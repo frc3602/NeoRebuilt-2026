@@ -273,7 +273,9 @@ public final class Constants {
         public static final int kSpindexerMotorID = 12;
         public static final int kReceiveMotorID = 11;
 
-        // Feed path ratios off shooter target speed.
+        // Feed path is spindexer -> receiver -> shooter.
+        // Keep the receiver slightly faster so it pulls the note out of the
+        // spindexer and into the flywheel more consistently.
         public static final double kSpindexerSpeedRatioToShooter = 0.54;
         public static final double kReceiverSpeedRatioToShooter =
             kSpindexerSpeedRatioToShooter * 1.10;
