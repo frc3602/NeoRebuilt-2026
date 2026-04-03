@@ -14,14 +14,14 @@ public final class Constants {
     public static final class ShooterConstants {
         private static final double kStandardGravityMetersPerSecondSquared = 9.80665;
         private static final double kLegacyShooterCommandMaxVelocityRotationsPerSecond = 95.0;
-        private static final double kLegacyShooterVelocityKP = 0.115;//0.139
+        private static final double kLegacyShooterVelocityKP = 0.0;//0.139
         private static final double kLegacyShooterVelocityKI = 0.0;
         private static final double kLegacyShooterVelocityKD = 0.0;
         private static final double kLegacyShooterVelocityKS = 0.25;
-        private static final double kLegacyShooterVelocityKV = 0.11;
+        private static final double kLegacyShooterVelocityKV = 0.12;
         private static final double kLegacyShooterVelocityKA = 0.0;
-        private static final double kLegacyShooterAccelerationRotationsPerSecondSquared = 600.0;
-        private static final double kLegacyShooterJerkRotationsPerSecondCubed = 6000.0;
+        private static final double kLegacyShooterAccelerationRotationsPerSecondSquared =300.0;
+        private static final double kLegacyShooterJerkRotationsPerSecondCubed = 3000.0;
         private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
         private static final double kOverallShotVelocityScale = 1.20;
         private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond =
@@ -37,8 +37,9 @@ public final class Constants {
         private static final double kTowerTargetHeightMeters = 2.12;
         private static final double kTowerHeightDeltaMeters =
             kTowerTargetHeightMeters - kShooterLaunchHeightMeters;
-        // Seed the lerp table from the previous ballistic curve so this branch
-        // starts close to the robot's current behavior before Elastic tuning.
+        // Keep the previous empirically tuned table around as a fallback
+        // reference, but the normal distance-based shot now uses the basic
+        // fixed-angle ballistic solve again.
         private static final double[][] kShooterDistanceVelocityLerpTable = {
             { 1.00, 41.07 },
             { 1.50, 42.47 },
@@ -61,8 +62,10 @@ public final class Constants {
         // Legacy percent output and nominal closed-loop reference speed
         public static final double kShooterSpeed = .75;
         public static final double kShooterSensorToMechanismRatio = 22.0 / 18.0;
+        public static final double kShooterShotDirectionSign = 1.0;
         public static final double kShooterTargetVelocityRotationsPerSecond =
-            -kReferenceShotVelocityMagnitudeRotationsPerSecond;
+            shotVelocityForMagnitudeRotationsPerSecond(
+                kReferenceShotVelocityMagnitudeRotationsPerSecond);
         public static final double kShooterCommandMaxVelocityRotationsPerSecond = 95.0;
 
         public static final double kShooterCurrentLimit = 60.0;
@@ -82,34 +85,25 @@ public final class Constants {
         public static final double kShooterJerkRotationsPerSecondCubed =
             legacyMotorRpsToMechanismRps(kLegacyShooterJerkRotationsPerSecondCubed);
         public static final double kShooterMinimumLookaheadSeconds = 0.05;
-        // Preserves the previous reference-shot flight-time estimate while the
-        // distance-to-RPS curve is tuned empirically through the lerp table.
+        // Converts flywheel mechanism speed into note exit speed for the basic
+        // ballistic distance solve and time-of-flight estimate.
         public static final double kShooterExitSpeedMetersPerSecondPerRotationPerSecond =
             0.134289065;
         // Small shared trim for distance-based tower shots when they are
         // landing a little short across the board.
         public static final double kDistanceShotBaseVelocityTrimRotationsPerSecond = 2.25;
-        // Temporary backspin model for the X-button test shot. As flywheel speed rises,
-        // we assume the note carries a bit more lift, so the effective downward
-        // acceleration drops slightly compared to a no-spin ballistic solve.
-        private static final double kBackspinLiftAccelerationAtReferenceShotMetersPerSecondSquared =
-            0.35;
-        private static final double kBackspinMaxLiftAccelerationMetersPerSecondSquared = 1.25;
-        private static final int kBallisticBackspinSolveIterations = 6;
 
         //Failsafe Speed
         public static final double kShooterFailsafeSpeed =
             legacyMotorRpsToMechanismRps(kLegacyShooterFailsafeVelocityRotationsPerSecond)
                 * kOverallShotVelocityScale;
         public static final double kShooterReverseVelocityRotationsPerSecond =
-            legacyMotorRpsToMechanismRps(kLegacyShooterFailsafeVelocityRotationsPerSecond);
+            -shotVelocityForMagnitudeRotationsPerSecond(
+                legacyMotorRpsToMechanismRps(kLegacyShooterFailsafeVelocityRotationsPerSecond));
 
         public static double velocityForDistanceMeters(double distanceMeters) {
-            return -shooterVelocityMagnitudeForDistanceMeters(distanceMeters);
-        }
-
-        public static double backspinBallisticVelocityForDistanceMeters(double distanceMeters) {
-            return -backspinBallisticVelocityMagnitudeForDistanceMeters(distanceMeters);
+            return shotVelocityForMagnitudeRotationsPerSecond(
+                shooterVelocityMagnitudeForDistanceMeters(distanceMeters));
         }
 
         public static double ballTimeOfFlightSecondsForDistanceMeters(double distanceMeters) {
@@ -156,6 +150,30 @@ public final class Constants {
         }
 
         private static double shooterVelocityMagnitudeForDistanceMeters(double distanceMeters) {
+            if (!Double.isFinite(distanceMeters) || distanceMeters <= 0.0) {
+                return kReferenceShotVelocityMagnitudeRotationsPerSecond;
+            }
+
+            double denominator =
+                2.0 * kShooterLaunchCosine * kShooterLaunchCosine
+                    * ((distanceMeters * Math.tan(kShooterLaunchAngleRadians))
+                        - kTowerHeightDeltaMeters);
+            if (denominator <= 1e-6) {
+                return lerpVelocityMagnitudeForDistanceMeters(distanceMeters);
+            }
+
+            double requiredLaunchVelocityMetersPerSecond = Math.sqrt(
+                (kStandardGravityMetersPerSecondSquared * distanceMeters * distanceMeters)
+                    / denominator);
+            double requiredShooterVelocityMagnitudeRotationsPerSecond =
+                requiredLaunchVelocityMetersPerSecond
+                    / kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
+            return Math.min(
+                requiredShooterVelocityMagnitudeRotationsPerSecond,
+                kShooterCommandMaxVelocityRotationsPerSecond);
+        }
+
+        private static double lerpVelocityMagnitudeForDistanceMeters(double distanceMeters) {
             if (!Double.isFinite(distanceMeters) || kShooterDistanceVelocityLerpTable.length == 0) {
                 return kReferenceShotVelocityMagnitudeRotationsPerSecond;
             }
@@ -184,58 +202,17 @@ public final class Constants {
             return kShooterDistanceVelocityLerpTable[kShooterDistanceVelocityLerpTable.length - 1][1];
         }
 
-        private static double backspinBallisticVelocityMagnitudeForDistanceMeters(
-                double distanceMeters) {
-            if (!Double.isFinite(distanceMeters) || distanceMeters <= 0.0) {
-                return kReferenceShotVelocityMagnitudeRotationsPerSecond;
-            }
-
-            double denominatorBase =
-                2.0 * kShooterLaunchCosine * kShooterLaunchCosine * Math.max(
-                    1e-6,
-                    (distanceMeters * Math.tan(kShooterLaunchAngleRadians)) - kTowerHeightDeltaMeters);
-            if (denominatorBase <= 1e-6) {
-                return shooterVelocityMagnitudeForDistanceMeters(distanceMeters);
-            }
-
-            double velocityMagnitudeRotationsPerSecond =
-                shooterVelocityMagnitudeForDistanceMeters(distanceMeters);
-            for (int i = 0; i < kBallisticBackspinSolveIterations; i++) {
-                double launchVelocityMetersPerSecond =
-                    launchVelocityMetersPerSecondForVelocityMagnitudeRotationsPerSecond(
-                        velocityMagnitudeRotationsPerSecond);
-                double effectiveGravityMetersPerSecondSquared = Math.max(
-                    1.0,
-                    kStandardGravityMetersPerSecondSquared
-                        - backspinLiftAccelerationMetersPerSecondSquared(
-                            velocityMagnitudeRotationsPerSecond));
-                double requiredLaunchVelocityMetersPerSecond = Math.sqrt(
-                    (effectiveGravityMetersPerSecondSquared * distanceMeters * distanceMeters)
-                        / denominatorBase);
-                velocityMagnitudeRotationsPerSecond =
-                    requiredLaunchVelocityMetersPerSecond
-                        / kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
-            }
-
-            return Math.min(
-                velocityMagnitudeRotationsPerSecond,
-                kShooterCommandMaxVelocityRotationsPerSecond);
-        }
-
-        private static double backspinLiftAccelerationMetersPerSecondSquared(
-                double shooterVelocityMagnitudeRotationsPerSecond) {
-            double normalizedShotSpeed = Math.abs(shooterVelocityMagnitudeRotationsPerSecond)
-                / kReferenceShotVelocityMagnitudeRotationsPerSecond;
-            return Math.min(
-                kBackspinMaxLiftAccelerationMetersPerSecondSquared,
-                kBackspinLiftAccelerationAtReferenceShotMetersPerSecondSquared
-                    * normalizedShotSpeed);
-        }
-
         private static double launchVelocityMetersPerSecondForVelocityMagnitudeRotationsPerSecond(
                 double shooterVelocityMagnitudeRotationsPerSecond) {
             return Math.abs(shooterVelocityMagnitudeRotationsPerSecond)
                 * kShooterExitSpeedMetersPerSecondPerRotationPerSecond;
+        }
+
+        public static double shotVelocityForMagnitudeRotationsPerSecond(
+                double shooterVelocityMagnitudeRotationsPerSecond) {
+            return Math.copySign(
+                Math.abs(shooterVelocityMagnitudeRotationsPerSecond),
+                kShooterShotDirectionSign);
         }
     }
 
@@ -372,12 +349,14 @@ public final class Constants {
         // spindexer and into the flywheel more consistently. The fixed feed
         // speeds below represent the current proven top-end feed rate; shot
         // commands scale up to that cap from the active shooter target speed.
+        public static final double kUniversalSpindexerVelocityScale = 11.0;
         public static final double kSpindexerSpeedRatioToShooter = 0.54;
         public static final double kReceiverSpeedRatioToShooter =
             kSpindexerSpeedRatioToShooter * 1.10;
         public static final double kSpindexerVelocityRotationsPerSecond =
-            -ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
-                * kSpindexerSpeedRatioToShooter;
+            -scaledSpindexerVelocityMagnitudeRotationsPerSecond(
+                ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
+                    * kSpindexerSpeedRatioToShooter);
         public static final double kReceiverVelocityRotationsPerSecond =
             -ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
                 * kReceiverSpeedRatioToShooter;
@@ -390,23 +369,38 @@ public final class Constants {
         public static final double kFeedVelocityKS = 0.25;
         public static final double kFeedVelocityKV = 0.12;
         public static final double kFeedVelocityKA = 0.10;
-        public static final double kFeedAccelerationRotationsPerSecondSquared = 400.0;
-        public static final double kFeedJerkRotationsPerSecondCubed = 6000.0;
+        public static final double kFeedAccelerationRotationsPerSecondSquared = 300.0;
+        public static final double kFeedJerkRotationsPerSecondCubed = 3000.0;
 
         public static double spindexerVelocityForShooterVelocityRotationsPerSecond(
                 double shooterVelocityRotationsPerSecond) {
             double scaledFeedVelocityMagnitudeRotationsPerSecond = Math.min(
-                Math.abs(shooterVelocityRotationsPerSecond) * kSpindexerSpeedRatioToShooter,
+                scaledSpindexerVelocityMagnitudeRotationsPerSecond(
+                    Math.abs(shooterVelocityRotationsPerSecond) * kSpindexerSpeedRatioToShooter),
                 Math.abs(kSpindexerVelocityRotationsPerSecond));
             return Math.copySign(
                 scaledFeedVelocityMagnitudeRotationsPerSecond,
-                shooterVelocityRotationsPerSecond);
+                kSpindexerVelocityRotationsPerSecond);
         }
 
         public static double receiverVelocityForSpindexerVelocityRotationsPerSecond(
                 double spindexerVelocityRotationsPerSecond) {
             return spindexerVelocityRotationsPerSecond
                 * (kReceiverSpeedRatioToShooter / kSpindexerSpeedRatioToShooter);
+        }
+
+        public static double scaleSpindexerVelocityRotationsPerSecond(
+                double spindexerVelocityRotationsPerSecond) {
+            return Math.copySign(
+                scaledSpindexerVelocityMagnitudeRotationsPerSecond(
+                    Math.abs(spindexerVelocityRotationsPerSecond)),
+                spindexerVelocityRotationsPerSecond);
+        }
+
+        private static double scaledSpindexerVelocityMagnitudeRotationsPerSecond(
+                double spindexerVelocityMagnitudeRotationsPerSecond) {
+            return Math.abs(spindexerVelocityMagnitudeRotationsPerSecond)
+                * kUniversalSpindexerVelocityScale;
         }
     }
 

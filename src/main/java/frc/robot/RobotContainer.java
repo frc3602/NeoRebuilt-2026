@@ -107,14 +107,14 @@ public class RobotContainer {
         .onFalse(m_superStructure.stopShoot());
 
     scoreHeld
-        .whileTrue(m_superStructure.shootTrackedLerpShot())
+        .whileTrue(m_superStructure.shootTrackedBallisticShot())
         .onFalse(m_superStructure.stopShoot());
 
     m_operatorController.x()
-        .whileTrue(m_superStructure.shootTrackedBackspinBallisticShot())
+        .whileTrue(m_superStructure.shootTrackedSliderVelocityShot())
         .onFalse(m_superStructure.stopShoot());
 
-    new Trigger(() -> m_operatorController.getHID().getBButton() && m_superStructure.isTrackedLerpShotReady())
+    new Trigger(() -> m_operatorController.getHID().getBButton() && m_superStructure.isTrackedBallisticShotReady())
         .whileTrue(driverShotReadyRumble());
 
     m_driverController.rightBumper().onTrue(m_superStructure.dropPivot());
@@ -189,7 +189,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("StopShoot", m_superStructure.stopShoot());
     NamedCommands.registerCommand("TrackAllianceTower", m_superStructure.trackAllianceTower());
     NamedCommands.registerCommand(
-        "ShootTrackedLerpShot", m_superStructure.shootTrackedLerpShot());
+        "ShootTrackedBallisticShot", m_superStructure.shootTrackedBallisticShot());
+    NamedCommands.registerCommand(
+        "ShootTrackedLerpShot", m_superStructure.shootTrackedBallisticShot());
     NamedCommands.registerCommand("StopShooterOnly", m_superStructure.stopShooterOnly());
     NamedCommands.registerCommand("TurretRearPreset", m_superStructure.turretRearPreset());
     NamedCommands.registerCommand("TurretLeftPreset", m_superStructure.turretLeftPreset());

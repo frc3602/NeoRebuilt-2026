@@ -26,6 +26,8 @@ import frc.robot.Constants.ShooterConstants;
 import java.util.function.DoubleUnaryOperator;
 
 public class Shooter extends SubsystemBase {
+    // Keep the legacy Elastic topic name so the existing dashboard slider/widget
+    // wiring continues to work while the code uses ballistic terminology.
     private static final String kElasticShooterVelocityOffsetTopicName =
         "LerpVelocityMagnitudeOffsetRPS";
     private static final String kElasticTrackedShotVelocitySliderTopicName =
@@ -34,7 +36,7 @@ public class Shooter extends SubsystemBase {
     private final TalonFX shooterLeader = new TalonFX(ShooterConstants.kShooterMotor1ID);
     private final TalonFX shooterFollower = new TalonFX(ShooterConstants.kShooterMotor2ID);
     private final Drivetrain drivetrain;
-    private final NetworkTableEntry shooterLerpVelocityMagnitudeOffsetEntry =
+    private final NetworkTableEntry distanceShotVelocityOffsetEntry =
         NetworkTableInstance.getDefault()
             .getTable("Elastic")
             .getSubTable("Shooter")
@@ -55,7 +57,7 @@ public class Shooter extends SubsystemBase {
 
     public Shooter(Drivetrain drivetrain) {
         this.drivetrain = drivetrain;
-        shooterLerpVelocityMagnitudeOffsetEntry.setDefaultDouble(0.0);
+        distanceShotVelocityOffsetEntry.setDefaultDouble(0.0);
         trackedShotVelocitySliderEntry.setDefaultDouble(
             Math.abs(ShooterConstants.kShooterTargetVelocityRotationsPerSecond));
 
@@ -117,13 +119,6 @@ public class Shooter extends SubsystemBase {
             getRequiredVelocityForDistanceMeters(getCompensatedDistanceToHubMeters()));
     }
 
-    public void updateBackspinBallisticVelocityForCurrentDistance() {
-        setVelocityRotationsPerSecond(
-            getRequiredBackspinBallisticVelocityForDistanceMeters(
-                getCompensatedDistanceToHubMeters(
-                    this::getRequiredBackspinBallisticVelocityForDistanceMeters)));
-    }
-
     public void updateVelocityForTarget(Translation2d targetTranslation) {
         setVelocityRotationsPerSecond(getRequiredVelocityForTarget(targetTranslation));
     }
@@ -146,12 +141,10 @@ public class Shooter extends SubsystemBase {
         return runEnd(this::updateVelocityForCurrentDistance, this::stop);
     }
 
-    public Command runBackspinBallisticVelocityCommand() {
-        return runEnd(this::updateBackspinBallisticVelocityForCurrentDistance, this::stop);
-    }
-
     public void updateVelocityFromTrackedShotSlider() {
-        setVelocityRotationsPerSecond(-getTrackedShotSliderVelocityMagnitudeRotationsPerSecond());
+        setVelocityRotationsPerSecond(
+            ShooterConstants.shotVelocityForMagnitudeRotationsPerSecond(
+                getTrackedShotSliderVelocityMagnitudeRotationsPerSecond()));
     }
 
     public Command runTrackedShotSliderVelocityCommand() {
@@ -160,10 +153,6 @@ public class Shooter extends SubsystemBase {
 
     public Command updateDistanceBasedVelocityOnceCommand() {
         return runOnce(this::updateVelocityForCurrentDistance);
-    }
-
-    public Command updateBackspinBallisticVelocityOnceCommand() {
-        return runOnce(this::updateBackspinBallisticVelocityForCurrentDistance);
     }
 
     public Command stopCommand() {
@@ -226,17 +215,12 @@ public class Shooter extends SubsystemBase {
             ShooterConstants.velocityForDistanceMeters(distanceMeters));
     }
 
-    private double getRequiredBackspinBallisticVelocityForDistanceMeters(double distanceMeters) {
-        return applyDistanceShotVelocityOffset(
-            ShooterConstants.backspinBallisticVelocityForDistanceMeters(distanceMeters));
-    }
-
     private double applyDistanceShotVelocityOffset(double baseVelocityRotationsPerSecond) {
         double tunedVelocityMagnitudeRotationsPerSecond = Math.max(
             0.0,
             Math.abs(baseVelocityRotationsPerSecond)
                 + ShooterConstants.kDistanceShotBaseVelocityTrimRotationsPerSecond
-                + getLerpVelocityMagnitudeOffsetRotationsPerSecond());
+                + getDistanceShotVelocityOffsetRotationsPerSecond());
         return Math.copySign(
             tunedVelocityMagnitudeRotationsPerSecond,
             baseVelocityRotationsPerSecond);
@@ -250,8 +234,8 @@ public class Shooter extends SubsystemBase {
             Math.abs(shooterVelocityRotationsPerSecond));
     }
 
-    public double getLerpVelocityMagnitudeOffsetRotationsPerSecond() {
-        return shooterLerpVelocityMagnitudeOffsetEntry.getDouble(0.0);
+    public double getDistanceShotVelocityOffsetRotationsPerSecond() {
+        return distanceShotVelocityOffsetEntry.getDouble(0.0);
     }
 
     public double getTrackedShotSliderVelocityMagnitudeRotationsPerSecond() {
