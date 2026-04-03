@@ -349,7 +349,7 @@ public final class Constants {
         // spindexer and into the flywheel more consistently. The fixed feed
         // speeds below represent the current proven top-end feed rate; shot
         // commands scale up to that cap from the active shooter target speed.
-        public static final double kUniversalSpindexerVelocityScale = 11.0;
+        public static final double kUniversalSpindexerVelocityScale = 27.84375;
         public static final double kSpindexerSpeedRatioToShooter = 0.54;
         public static final double kReceiverSpeedRatioToShooter =
             kSpindexerSpeedRatioToShooter * 1.10;
