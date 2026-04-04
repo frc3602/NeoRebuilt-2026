@@ -3,44 +3,47 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.926217741935483,
-        "y": 3.486411290322581
+        "x": 3.5049666666666663,
+        "y": 4.034999999999999
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.17491129032258,
-        "y": -0.3317661290322551
+        "x": 1.634033333337412,
+        "y": 2.349211111107805
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.7254111111111117,
-        "y": 0.8095888888888885
+        "x": 0.145,
+        "y": 0.781
       },
       "prevControl": {
-        "x": 4.6705436412315935,
-        "y": 0.8751551539491287
+        "x": 0.778388888888889,
+        "y": 1.2292444444444457
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.6711811023622029,
-      "rotationDegrees": 0.0
-    },
-    {
-      "waypointRelativePos": 0.8059842519685047,
-      "rotationDegrees": 0.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "DropPivot",
+      "waypointRelativePos": 0.677338129496403,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "DropPivot"
+        }
+      }
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
@@ -51,13 +54,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -151.95053922510408
+    "rotation": -90.0
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 90.68206039317263
+    "rotation": -179.29701957726442
   },
   "useDefaultConstraints": true
 }

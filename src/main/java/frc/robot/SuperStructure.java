@@ -321,12 +321,7 @@ public class SuperStructure {
     }
 
     public Command autonRunIntake() {
-        return Commands.parallel(
-            pivot.dumbDropIntake(),
-            Commands.sequence(
-                intake.intakeForwardCommand(),
-                Commands.waitSeconds(kAutonIntakeTimeSeconds),
-                intake.stopCommand()));
+        return Commands.run(intake::intakeForward, intake);
     }
 
     public Command autonIntakeAndStage() {

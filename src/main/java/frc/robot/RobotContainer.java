@@ -38,12 +38,14 @@ import java.util.List;
 
 public class RobotContainer {
     private static final String kPreferredAutoName = "Basic Center Auto";
-    private static final String kClimbAutoName = "Climb Auto";
+
     private static final String kLeftTrenchDepotAutoName = "Left Trench, Depot";
     private static final String kShootTestAutoName = "Shoot Test";
     private static final String kRightTrenchOutpostAutoName = "Right Trench, Outpost";
-    private static final String kRightTrenchOutpostCenterAutoName = "Right Trench, Outpost, Center";
     private static final String kRightTrenchCenterRightAlliance = "Right Trench, Center, Right Alliance";
+    private static final String kCenterHubOutpost = "Center Hub, Outpost";
+    private static final String kCenterHubDepot = "Center Hub, Depot";
+    
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second                                                                             // max angular velocity
     private final SwerveRequest.FieldCentric drive =
@@ -152,12 +154,13 @@ public class RobotContainer {
           "Preferred auto '" + kPreferredAutoName + "' was not found in PathPlanner autos.", false);
     }
 
-    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kClimbAutoName);
+
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kLeftTrenchDepotAutoName);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kShootTestAutoName);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kRightTrenchOutpostAutoName);
-    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kRightTrenchOutpostCenterAutoName);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kRightTrenchCenterRightAlliance);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kCenterHubOutpost);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kCenterHubDepot);
   }
 
   private void addRequestedAutoOption(

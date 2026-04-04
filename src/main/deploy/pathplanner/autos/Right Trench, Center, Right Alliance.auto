@@ -45,7 +45,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 3.5
+                        "waitTime": 2.5
                       }
                     },
                     {
@@ -64,6 +64,6 @@
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Feild Ready Autons",
   "choreoAuto": false
 }

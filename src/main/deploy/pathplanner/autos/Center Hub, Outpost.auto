@@ -7,13 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left Trench, Depot"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Depot, Left Alliance"
+            "pathName": "Center Hub, Outpost"
           }
         },
         {
@@ -39,7 +33,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 2.0
+                        "waitTime": 2.5
                       }
                     },
                     {
@@ -49,25 +43,6 @@
                       }
                     }
                   ]
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "DropPivot"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "StopIntake"
                 }
               }
             ]

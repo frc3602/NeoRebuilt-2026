@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.5732667617689007,
-        "y": 7.237318116975749
+        "x": 3.5439444444444446,
+        "y": 4.034999999999999
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.6324679029957196,
-        "y": 7.431398002853067
+        "x": 3.2808444444444445,
+        "y": 6.324944444444444
       },
       "isLocked": false,
       "linkedName": null
@@ -17,11 +17,11 @@
     {
       "anchor": {
         "x": 0.29904444444444434,
-        "y": 5.886
+        "y": 5.944911111111111
       },
       "prevControl": {
-        "x": 2.9902855286099226,
-        "y": 5.873061340941511
+        "x": 0.9032,
+        "y": 5.993633333333333
       },
       "nextControl": null,
       "isLocked": false,
@@ -34,7 +34,7 @@
   "eventMarkers": [
     {
       "name": "DropPivot",
-      "waypointRelativePos": 0,
+      "waypointRelativePos": 0.07302158273381294,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
@@ -45,7 +45,7 @@
     },
     {
       "name": "AutonRunIntake",
-      "waypointRelativePos": 0.6197841726618704,
+      "waypointRelativePos": 0.595323741007197,
       "endWaypointRelativePos": 1.0,
       "command": {
         "type": "named",
@@ -65,13 +65,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -178.1221225527145
+    "rotation": 180.0
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": -178.37885408634662
   },
   "useDefaultConstraints": true
 }
