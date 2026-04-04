@@ -12,7 +12,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTableEntry;
@@ -30,8 +29,6 @@ public class Shooter extends SubsystemBase {
     // wiring continues to work while the code uses ballistic terminology.
     private static final String kElasticShooterVelocityOffsetTopicName =
         "LerpVelocityMagnitudeOffsetRPS";
-    private static final String kElasticTrackedShotVelocitySliderTopicName =
-        "TrackedShotVelocitySliderRPS";
 
     private final TalonFX shooterLeader = new TalonFX(ShooterConstants.kShooterMotor1ID);
     private final TalonFX shooterFollower = new TalonFX(ShooterConstants.kShooterMotor2ID);
@@ -41,11 +38,6 @@ public class Shooter extends SubsystemBase {
             .getTable("Elastic")
             .getSubTable("Shooter")
             .getEntry(kElasticShooterVelocityOffsetTopicName);
-    private final NetworkTableEntry trackedShotVelocitySliderEntry =
-        NetworkTableInstance.getDefault()
-            .getTable("Elastic")
-            .getSubTable("Shooter")
-            .getEntry(kElasticTrackedShotVelocitySliderTopicName);
 
     private final MotionMagicVelocityVoltage velocityRequest = new MotionMagicVelocityVoltage(0);
     private final VoltageOut stopRequest = new VoltageOut(0);
@@ -58,8 +50,6 @@ public class Shooter extends SubsystemBase {
     public Shooter(Drivetrain drivetrain) {
         this.drivetrain = drivetrain;
         distanceShotVelocityOffsetEntry.setDefaultDouble(0.0);
-        trackedShotVelocitySliderEntry.setDefaultDouble(
-            Math.abs(ShooterConstants.kShooterTargetVelocityRotationsPerSecond));
 
         configureMotor(shooterLeader);
         configureMotor(shooterFollower);
@@ -139,16 +129,6 @@ public class Shooter extends SubsystemBase {
 
     public Command runDistanceBasedVelocityCommand() {
         return runEnd(this::updateVelocityForCurrentDistance, this::stop);
-    }
-
-    public void updateVelocityFromTrackedShotSlider() {
-        setVelocityRotationsPerSecond(
-            ShooterConstants.shotVelocityForMagnitudeRotationsPerSecond(
-                getTrackedShotSliderVelocityMagnitudeRotationsPerSecond()));
-    }
-
-    public Command runTrackedShotSliderVelocityCommand() {
-        return runEnd(this::updateVelocityFromTrackedShotSlider, this::stop);
     }
 
     public Command updateDistanceBasedVelocityOnceCommand() {
@@ -236,14 +216,6 @@ public class Shooter extends SubsystemBase {
 
     public double getDistanceShotVelocityOffsetRotationsPerSecond() {
         return distanceShotVelocityOffsetEntry.getDouble(0.0);
-    }
-
-    public double getTrackedShotSliderVelocityMagnitudeRotationsPerSecond() {
-        return MathUtil.clamp(
-            Math.abs(trackedShotVelocitySliderEntry.getDouble(
-                Math.abs(ShooterConstants.kShooterTargetVelocityRotationsPerSecond))),
-            0.0,
-            ShooterConstants.kShooterCommandMaxVelocityRotationsPerSecond);
     }
 
     private void configureMotor(TalonFX motor) {

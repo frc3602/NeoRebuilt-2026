@@ -9,13 +9,23 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.SpindexerConstants;
 
 public class Spindexer extends SubsystemBase {
+    private static final String kElasticTrackedShotVelocityMultiplierTopicName =
+        "TrackedShotVelocityMultiplier";
+
     private final TalonFX spindexerMotor = new TalonFX(SpindexerConstants.kSpindexerMotorID);
     private final TalonFX receiverMotor = new TalonFX(SpindexerConstants.kReceiveMotorID);
+    private final NetworkTableEntry trackedShotVelocityMultiplierEntry =
+        NetworkTableInstance.getDefault()
+            .getTable("Elastic")
+            .getSubTable("Spindexer")
+            .getEntry(kElasticTrackedShotVelocityMultiplierTopicName);
 
     private final MotionMagicVelocityVoltage spindexerVelocityRequest =
         new MotionMagicVelocityVoltage(0);
@@ -26,6 +36,7 @@ public class Spindexer extends SubsystemBase {
     private double receiverTargetVelocityRotationsPerSecond = 0.0;
 
     public Spindexer() {
+        trackedShotVelocityMultiplierEntry.setDefaultDouble(1.0);
         configureMotor(spindexerMotor, SpindexerConstants.kSpindexerCurrentLimit);
         configureMotor(receiverMotor, SpindexerConstants.kReceiverCurrentLimit);
         stop();
@@ -43,6 +54,13 @@ public class Spindexer extends SubsystemBase {
         setFeedVelocityRotationsPerSecond(
             SpindexerConstants.spindexerVelocityForShooterVelocityRotationsPerSecond(
                 shooterVelocityRotationsPerSecond));
+    }
+
+    public void feedForShooterVelocityRotationsPerSecondWithTrackedShotMultiplier(
+            double shooterVelocityRotationsPerSecond) {
+        setFeedVelocityRotationsPerSecond(
+            SpindexerConstants.spindexerVelocityForShooterVelocityRotationsPerSecond(
+                shooterVelocityRotationsPerSecond * getTrackedShotVelocityMultiplier()));
     }
 
     public void setFeedVelocityRotationsPerSecond(double spindexerVelocityRotationsPerSecond) {
@@ -84,6 +102,10 @@ public class Spindexer extends SubsystemBase {
 
     public double getReceiverCurrentAmps() {
         return receiverMotor.getStatorCurrent().getValueAsDouble();
+    }
+
+    public double getTrackedShotVelocityMultiplier() {
+        return Math.max(0.0, trackedShotVelocityMultiplierEntry.getDouble(1.0));
     }
 
     public Command feedForwardCommand() {

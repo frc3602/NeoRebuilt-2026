@@ -110,10 +110,6 @@ public class RobotContainer {
         .whileTrue(m_superStructure.shootTrackedBallisticShot())
         .onFalse(m_superStructure.stopShoot());
 
-    m_operatorController.x()
-        .whileTrue(m_superStructure.shootTrackedSliderVelocityShot())
-        .onFalse(m_superStructure.stopShoot());
-
     new Trigger(() -> m_operatorController.getHID().getBButton() && m_superStructure.isTrackedBallisticShotReady())
         .whileTrue(driverShotReadyRumble());
 

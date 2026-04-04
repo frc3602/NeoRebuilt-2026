@@ -20,8 +20,8 @@ public final class Constants {
         private static final double kLegacyShooterVelocityKS = 0.25;
         private static final double kLegacyShooterVelocityKV = 0.12;
         private static final double kLegacyShooterVelocityKA = 0.0;
-        private static final double kLegacyShooterAccelerationRotationsPerSecondSquared =300.0;
-        private static final double kLegacyShooterJerkRotationsPerSecondCubed = 3000.0;
+        private static final double kLegacyShooterAccelerationRotationsPerSecondSquared =500.0;
+        private static final double kLegacyShooterJerkRotationsPerSecondCubed = 5000.0;
         private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
         private static final double kOverallShotVelocityScale = 1.20;
         private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond =
@@ -88,10 +88,10 @@ public final class Constants {
         // Converts flywheel mechanism speed into note exit speed for the basic
         // ballistic distance solve and time-of-flight estimate.
         public static final double kShooterExitSpeedMetersPerSecondPerRotationPerSecond =
-            0.134289065;
-        // Small shared trim for distance-based tower shots when they are
-        // landing a little short across the board.
-        public static final double kDistanceShotBaseVelocityTrimRotationsPerSecond = 2.25;
+            0.191366544;
+        // Shared trim for distance-based tower shots. Leave this at zero when
+        // the fitted ballistic model already matches measured clean shots.
+        public static final double kDistanceShotBaseVelocityTrimRotationsPerSecond = 0.0;
 
         //Failsafe Speed
         public static final double kShooterFailsafeSpeed =

@@ -128,11 +128,13 @@ public class SuperStructure {
             .finallyDo(spindexer::stop);
     }
 
-    public Command shootTrackedSliderVelocityShot() {
+    public Command shootTrackedBallisticShotWithFeedMultiplier() {
         return Commands.parallel(
             turret.aimAtHubWithMotionCompCommand(),
-            shooter.runTrackedShotSliderVelocityCommand(),
-            waitUntilReadyDelayThenContinuousFeedCommand(this::isTrackedBallisticShotFeedReady))
+            shooter.runDistanceBasedVelocityCommand(),
+            waitUntilReadyDelayThenFeedCommand(
+                this::isTrackedBallisticShotFeedReady,
+                continuousFeedWithTrackedShotVelocityMultiplierCommand()))
             .finallyDo(spindexer::stop);
     }
 
@@ -166,18 +168,33 @@ public class SuperStructure {
             spindexer);
     }
 
-    private Command waitUntilReadyThenContinuousFeedCommand(BooleanSupplier isFeedReady) {
-        return Commands.sequence(
-            Commands.waitUntil(isFeedReady),
-            continuousFeedCommand());
+    private Command continuousFeedWithTrackedShotVelocityMultiplierCommand() {
+        return Commands.run(
+            () -> spindexer.feedForShooterVelocityRotationsPerSecondWithTrackedShotMultiplier(
+                shooter.getTargetVelocityRotationsPerSecond()),
+            spindexer);
     }
 
-    private Command waitUntilReadyDelayThenContinuousFeedCommand(BooleanSupplier isFeedReady) {
+    private Command waitUntilReadyThenFeedCommand(BooleanSupplier isFeedReady, Command feedCommand) {
+        return Commands.sequence(
+            Commands.waitUntil(isFeedReady),
+            feedCommand);
+    }
+
+    private Command waitUntilReadyThenContinuousFeedCommand(BooleanSupplier isFeedReady) {
+        return waitUntilReadyThenFeedCommand(isFeedReady, continuousFeedCommand());
+    }
+
+    private Command waitUntilReadyDelayThenFeedCommand(BooleanSupplier isFeedReady, Command feedCommand) {
         return Commands.sequence(
             Commands.waitUntil(isFeedReady),
             Commands.waitSeconds(kTrackedShotFeedDelaySeconds),
             Commands.waitUntil(isFeedReady),
-            continuousFeedCommand());
+            feedCommand);
+    }
+
+    private Command waitUntilReadyDelayThenContinuousFeedCommand(BooleanSupplier isFeedReady) {
+        return waitUntilReadyDelayThenFeedCommand(isFeedReady, continuousFeedCommand());
     }
 
     public Command fixedShotCommand(double shooterVelocityRotationsPerSecond) {
