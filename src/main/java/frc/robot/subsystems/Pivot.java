@@ -101,6 +101,10 @@ public class Pivot extends SubsystemBase {
         return setPivotPositionCommand(IntakeConstants.kPivotRaiseDegrees);
     }
 
+    public Command dumbPartialRaiseIntake() {
+        return setPivotPositionCommand(IntakeConstants.kPartialPivotRaiseDegrees);
+    }
+
     public boolean isRightDown() {
         return getRightPosition() > 90.0;
     }

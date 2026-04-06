@@ -229,6 +229,10 @@ public class SuperStructure {
         return pivot.dumbRaiseIntake();
     }
 
+    public Command partialRaisePivot() {
+        return pivot.dumbPartialRaiseIntake();
+    }
+
     public Command runIntake() {
         return intake.intakeForwardCommand();
     }

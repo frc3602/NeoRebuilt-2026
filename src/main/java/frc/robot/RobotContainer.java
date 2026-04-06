@@ -45,6 +45,7 @@ public class RobotContainer {
     private static final String kRightTrenchCenterRightAlliance = "Right Trench, Center, Right Alliance";
     private static final String kCenterHubOutpost = "Center Hub, Outpost";
     private static final String kCenterHubDepot = "Center Hub, Depot";
+    private static final String kBasicCenterAutoName = "Basic Center Auto";
     
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second                                                                             // max angular velocity
@@ -100,7 +101,7 @@ public class RobotContainer {
         .whileTrue(m_superStructure.manualFeedReverse())
         .onFalse(m_superStructure.stopShoot());
 
-    m_operatorController.leftBumper().onTrue(m_superStructure.raisePivot());
+    m_operatorController.leftBumper().onTrue(m_superStructure.partialRaisePivot()).onFalse(m_superStructure.raisePivot());
     m_operatorController.povUp().onTrue(m_climber.raiseCommand());
     m_operatorController.povDown().onTrue(m_climber.lowerCommand());
 
@@ -161,6 +162,7 @@ public class RobotContainer {
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kRightTrenchCenterRightAlliance);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kCenterHubOutpost);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kCenterHubDepot);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kBasicCenterAutoName);
   }
 
   private void addRequestedAutoOption(
