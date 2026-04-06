@@ -2,6 +2,8 @@ package frc.robot.telemetry;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.IntegerPublisher;
@@ -36,6 +38,7 @@ public class ElasticTelemetry {
   private final BooleanPublisher m_autonomousPublisher;
   private final BooleanPublisher m_teleopPublisher;
   private final BooleanPublisher m_estoppedPublisher;
+  private final BooleanPublisher m_batteryLowPublisher;
   private final DoublePublisher m_matchTimePublisher;
   private final DoublePublisher m_batteryVoltagePublisher;
   private final DoublePublisher m_poseXPublisher;
@@ -85,6 +88,7 @@ public class ElasticTelemetry {
   private final DoublePublisher m_spindexerCurrentPublisher;
   private final DoublePublisher m_receiverCurrentPublisher;
   private final BooleanPublisher m_spindexerFeedingPublisher;
+  private final Alert m_batteryLowAlert;
 
   public ElasticTelemetry() {
     NetworkTable elasticTable = NetworkTableInstance.getDefault().getTable("Elastic");
@@ -106,6 +110,7 @@ public class ElasticTelemetry {
     m_autonomousPublisher = statusTable.getBooleanTopic("Autonomous").publish();
     m_teleopPublisher = statusTable.getBooleanTopic("Teleop").publish();
     m_estoppedPublisher = statusTable.getBooleanTopic("EStopped").publish();
+    m_batteryLowPublisher = statusTable.getBooleanTopic("BatteryLow").publish();
     m_matchTimePublisher = statusTable.getDoubleTopic("MatchTimeSeconds").publish();
     m_batteryVoltagePublisher = statusTable.getDoubleTopic("BatteryVoltage").publish();
 
@@ -163,6 +168,9 @@ public class ElasticTelemetry {
     m_spindexerCurrentPublisher = spindexerTable.getDoubleTopic("SpindexerCurrentAmps").publish();
     m_receiverCurrentPublisher = spindexerTable.getDoubleTopic("ReceiverCurrentAmps").publish();
     m_spindexerFeedingPublisher = spindexerTable.getBooleanTopic("FeedingCommanded").publish();
+
+    m_batteryLowAlert =
+        new Alert("Battery voltage is below 12V. Change the battery.", AlertType.kWarning);
   }
 
   public void update(RobotContainer robotContainer) {
@@ -191,7 +199,11 @@ public class ElasticTelemetry {
     m_teleopPublisher.set(DriverStation.isTeleopEnabled());
     m_estoppedPublisher.set(DriverStation.isEStopped());
     m_matchTimePublisher.set(DriverStation.getMatchTime());
-    m_batteryVoltagePublisher.set(RobotController.getBatteryVoltage());
+    double batteryVoltage = RobotController.getBatteryVoltage();
+    boolean batteryLow = DriverStation.isDisabled() && batteryVoltage < 12.0;
+    m_batteryVoltagePublisher.set(batteryVoltage);
+    m_batteryLowPublisher.set(batteryLow);
+    m_batteryLowAlert.set(batteryLow);
 
     m_poseXPublisher.set(pose.getX());
     m_poseYPublisher.set(pose.getY());
