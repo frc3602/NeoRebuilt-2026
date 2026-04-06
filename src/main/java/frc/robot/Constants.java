@@ -335,13 +335,13 @@ public final class Constants {
         public static final int kReceiveMotorID = 11;
 
         // Feed path is spindexer -> receiver -> shooter.
-        // Keep the receiver slightly faster so it pulls the note out of the
-        // spindexer and into the flywheel more consistently. The fixed feed
-        // speeds below represent the current proven top-end feed rate; shot
-        // commands scale up to that cap from the active shooter target speed.
+        // Keep the receiver close to the spindexer speed so it still pulls the
+        // note cleanly without outrunning the feed path. The fixed feed speeds
+        // below represent the current proven top-end feed rate; shot commands
+        // scale up to that cap from the active shooter target speed.
         public static final double kUniversalSpindexerVelocityScale = 20.8828125;
         public static final double kSpindexerSpeedRatioToShooter = 0.54;
-        public static final double kReceiverSpeedRatioToShooter = kSpindexerSpeedRatioToShooter * 1.10;
+        public static final double kReceiverSpeedRatioToShooter = kSpindexerSpeedRatioToShooter * 0.99;
         public static final double kSpindexerVelocityRotationsPerSecond = -scaledSpindexerVelocityMagnitudeRotationsPerSecond(
                 ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
                         * kSpindexerSpeedRatioToShooter);
