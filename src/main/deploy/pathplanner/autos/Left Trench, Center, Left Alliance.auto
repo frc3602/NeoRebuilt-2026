@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left Trench Center"
+            "pathName": "Left Trench, Center"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Middle Left"
+            "pathName": "Center, Left Trench"
           }
         }
       ]
