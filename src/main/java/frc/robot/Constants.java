@@ -339,9 +339,9 @@ public final class Constants {
         // note cleanly without outrunning the feed path. The fixed feed speeds
         // below represent the current proven top-end feed rate; shot commands
         // scale up to that cap from the active shooter target speed.
-        public static final double kUniversalSpindexerVelocityScale = 20.8828125;
+        public static final double kUniversalSpindexerVelocityScale = 12.5296875;
         public static final double kSpindexerSpeedRatioToShooter = 0.54;
-        public static final double kReceiverSpeedRatioToShooter = kSpindexerSpeedRatioToShooter * 0.99;
+        public static final double kReceiverSpeedRatioToShooter = kSpindexerSpeedRatioToShooter * 0.594;
         public static final double kSpindexerVelocityRotationsPerSecond = -scaledSpindexerVelocityMagnitudeRotationsPerSecond(
                 ShooterConstants.kReferenceFeedVelocityMagnitudeRotationsPerSecond
                         * kSpindexerSpeedRatioToShooter);
