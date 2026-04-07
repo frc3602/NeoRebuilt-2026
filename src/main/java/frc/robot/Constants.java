@@ -24,7 +24,7 @@ public final class Constants {
         private static final double kLegacyShooterAccelerationRotationsPerSecondSquared = 500.0;
         private static final double kLegacyShooterJerkRotationsPerSecondCubed = 5000.0;
         private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
-        private static final double kOverallShotVelocityScale = 0.98;
+        private static final double kOverallShotVelocityScale = 1.0;
         private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond = 44.0
                 * kOverallShotVelocityScale;
         private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond = legacyMotorRpsToMechanismRps(
@@ -82,7 +82,7 @@ public final class Constants {
         public static final double kShooterExitSpeedMetersPerSecondPerRotationPerSecond = 0.18109760731707317;
         // Shared trim for distance-based tower shots. Leave this at zero when
         // the fitted ballistic model already matches measured clean shots.
-        public static final double kDistanceShotBaseVelocityTrimRotationsPerSecond = 0.0;
+        public static final double kDistanceShotBaseVelocityTrimRotationsPerSecond = -2.0;
 
         // Failsafe Speed
         public static final double kShooterFailsafeSpeed = legacyMotorRpsToMechanismRps(
