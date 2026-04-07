@@ -11,19 +11,25 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "DropPivot"
+          }
+        },
+        {
           "type": "parallel",
           "data": {
             "commands": [
               {
                 "type": "named",
                 "data": {
-                  "name": "DropPivot"
+                  "name": "AutonShootTrackedShot"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "AutonShootTrackedShot"
+                  "name": "RaisePivot"
                 }
               }
             ]
