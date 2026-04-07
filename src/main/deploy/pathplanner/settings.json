@@ -6,7 +6,8 @@
     "New Folder"
   ],
   "autoFolders": [
-    "Feild Ready Autons"
+    "Feild Ready Autons",
+    "Suspicious"
   ],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,
