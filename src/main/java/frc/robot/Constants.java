@@ -24,7 +24,7 @@ public final class Constants {
         private static final double kLegacyShooterAccelerationRotationsPerSecondSquared = 500.0;
         private static final double kLegacyShooterJerkRotationsPerSecondCubed = 5000.0;
         private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
-        private static final double kOverallShotVelocityScale = 1.20;
+        private static final double kOverallShotVelocityScale = 1.164;
         private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond = 44.0
                 * kOverallShotVelocityScale;
         private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond = legacyMotorRpsToMechanismRps(
