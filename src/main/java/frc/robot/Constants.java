@@ -15,7 +15,7 @@ public final class Constants {
     public static final class ShooterConstants {
         private static final double kStandardGravityMetersPerSecondSquared = 9.80665;
         private static final double kLegacyShooterCommandMaxVelocityRotationsPerSecond = 95.0;
-        private static final double kLegacyShooterVelocityKP = 0.0;// 0.139
+        private static final double kLegacyShooterVelocityKP = 0.03;// 0.139
         private static final double kLegacyShooterVelocityKI = 0.0;
         private static final double kLegacyShooterVelocityKD = 0.0;
         private static final double kLegacyShooterVelocityKS = 0.25;
