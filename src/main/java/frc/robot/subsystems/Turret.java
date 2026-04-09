@@ -134,8 +134,19 @@ public class Turret extends SubsystemBase {
             && robotX <= TurretConstants.kCenterFieldXMaxMeters;
     }
 
+    public boolean isOutsideAllianceZone() {
+        double robotX = drivetrain.getEstimatedPose().getX();
+        Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+
+        if (alliance == Alliance.Red) {
+            return robotX < TurretConstants.kCenterFieldXMaxMeters;
+        }
+
+        return robotX > TurretConstants.kCenterFieldXMinMeters;
+    }
+
     public Translation2d getCurrentAlignTargetTranslation() {
-        if (isInCenterField()) {
+        if (isOutsideAllianceZone()) {
             return getCurrentPassCornerTranslation();
         }
 
@@ -159,7 +170,7 @@ public class Turret extends SubsystemBase {
     }
 
     public String getAlignTargetMode() {
-        return isInCenterField() ? "Pass" : "Hub";
+        return isOutsideAllianceZone() ? "Pass" : "Hub";
     }
 
     public double calculateAlignAngleDegrees() {

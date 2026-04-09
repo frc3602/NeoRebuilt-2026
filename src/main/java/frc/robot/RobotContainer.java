@@ -122,7 +122,7 @@ public class RobotContainer {
         .onFalse(m_superStructure.stopIntake());
 
     m_operatorController.rightTrigger()
-        .and(m_turret::isInCenterField)
+        .and(m_turret::isOutsideAllianceZone)
         .whileTrue(m_superStructure.shootTrackedPassCornerShot())
         .onFalse(m_superStructure.stopShoot());
 

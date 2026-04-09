@@ -139,12 +139,12 @@ public class SuperStructure {
     }
 
     public boolean isTrackedPassCornerShotReady() {
-        return turret.isInCenterField()
+        return turret.isOutsideAllianceZone()
             && isTurretAndShooterReadyForShot();
     }
 
     public boolean isTrackedPassCornerShotFeedReady() {
-        return turret.isInCenterField()
+        return turret.isOutsideAllianceZone()
             && isTurretAndShooterReadyToFeedShot();
     }
 
