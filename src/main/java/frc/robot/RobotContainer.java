@@ -73,6 +73,7 @@ public class RobotContainer {
   private final SendableChooser<String> m_autoChooser = new SendableChooser<>();
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
+  private double polarityValue = 1.0;
 
 
   public RobotContainer() {
@@ -86,10 +87,10 @@ public class RobotContainer {
 
       m_drivetrain.setDefaultCommand(
                 // Drivetrain will execute this command periodically
-                m_drivetrain.applyRequest(() -> drive.withVelocityX(-m_driverController.getLeftY() * MaxSpeed) // Drive forward with
+                m_drivetrain.applyRequest(() -> drive.withVelocityX(-m_driverController.getLeftY() * MaxSpeed * polarityValue) // Drive forward with
                                                                                                   // negative Y
                                                                                                   // (forward)
-                        .withVelocityY(-m_driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                        .withVelocityY(-m_driverController.getLeftX() * MaxSpeed * polarityValue) // Drive left with negative X (left)
                         .withRotationalRate(-m_driverController.getRightX() * MaxAngularRate) // Drive counterclockwise with
                                                                                     // negative X (left)
 
@@ -126,7 +127,7 @@ public class RobotContainer {
         .whileTrue(m_superStructure.shootTrackedPassCornerShot())
         .onFalse(m_superStructure.stopShoot());
 
-    m_driverController.a().onTrue(reportUnimplementedDriveMode("Drive polarity change not implemented yet"));
+    m_driverController.a().onTrue(polarityCommand());
 
     m_driverController.x().whileTrue(m_drivetrain.applyRequest(() -> brake));
 
@@ -268,6 +269,10 @@ public class RobotContainer {
 
   public String getSelectedAutoName() {
     return m_autoChooser.getSelected() == null ? "" : m_autoChooser.getSelected();
+  }
+
+  public Command polarityCommand(){
+    return Commands.runOnce(() ->  polarityValue = polarityValue * -1.0 ); 
   }
 
   public Command getAutonomousCommand() {
