@@ -409,10 +409,10 @@ public final class Constants {
         public static final Translation2d kRedTowerPosition = new Translation2d(11.919, 4.029);
         public static final Translation2d kBlueHubPosition = kBlueTowerPosition;
         public static final Translation2d kRedHubPosition = kRedTowerPosition;
-        public static final Translation2d kBlueRightPassCornerPosition = new Translation2d(1.0, 1.0);
-        public static final Translation2d kBlueLeftPassCornerPosition = new Translation2d(1.0, 7.0);
-        public static final Translation2d kRedRightPassCornerPosition = new Translation2d(kFieldLengthMeters - 1.0,
+        public static final Translation2d kBlueRightPassCornerPosition = new Translation2d(0.0, 1.0);
+        public static final Translation2d kBlueLeftPassCornerPosition = new Translation2d(0.0, 7.0);
+        public static final Translation2d kRedRightPassCornerPosition = new Translation2d(kFieldLengthMeters,
                 1.0);
-        public static final Translation2d kRedLeftPassCornerPosition = new Translation2d(kFieldLengthMeters - 1.0, 7.0);
+        public static final Translation2d kRedLeftPassCornerPosition = new Translation2d(kFieldLengthMeters, 7.0);
     }
 }
