@@ -126,7 +126,7 @@ public class RobotContainer {
 
     m_operatorController.rightTrigger()
         .and(m_turret::isOutsideAllianceZone)
-        .whileTrue(m_superStructure.shootTrackedPassCornerShot())
+        .whileTrue(m_superStructure.shootFailsafePass())
         .onFalse(m_superStructure.stopShoot());
 
     m_driverController.a().onTrue(polarityCommand());

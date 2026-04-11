@@ -71,6 +71,14 @@ public class SuperStructure {
             waitUntilReadyThenContinuousFeedCommand(this::isTurretAndShooterReadyToFeedShot));
     }
 
+    public Command shootFailsafePass() {
+        return Commands.parallel(
+            Commands.run(() -> turret.setTurretAngleDegrees(180.0), turret),
+            Commands.run(() -> shooter.setVelocityRotationsPerSecond(
+                kFailsafeShooterVelocityRotationsPerSecond * 1.1), shooter),
+            waitUntilReadyThenContinuousFeedCommand(this::isTurretAndShooterReadyToFeedShot));
+    }
+
     public Command prepareFailsafeShot() {
         return Commands.parallel(
             turret.rearPresetCommand(),
