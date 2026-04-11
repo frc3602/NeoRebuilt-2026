@@ -5,28 +5,27 @@
     "data": {
       "commands": [
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Left Trench, Center"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "AutonRunIntake"
-                }
-              }
-            ]
+            "name": "DropPivot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left Trench, Center"
           }
         },
         {
           "type": "path",
           "data": {
             "pathName": "Center, Left Trench"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutonReverseSpindexerHalfSecond"
           }
         },
         {
@@ -46,7 +45,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 4.0
+                        "waitTime": 2.5
                       }
                     },
                     {

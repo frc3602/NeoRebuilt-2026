@@ -46,8 +46,9 @@ public class RobotContainer {
     private static final String kCenterHubOutpost = "Center Hub, Outpost";
     private static final String kCenterHubDepot = "Center Hub, Depot";
     private static final String kBasicCenterAutoName = "Basic Center Auto";
-    private static final String kLeftTrenchCenterAutoName = "Left Trench, Center, Left Alliance";
-    
+    private static final String kLeftTrenchCenterLeftAlliance = "Left Trench, Center, Left Alliance";
+    private static final String kLeftTrenchCenterZone = "Left Trench, Center Zone";
+
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second                                                                             // max angular velocity
     private final SwerveRequest.FieldCentric drive =
@@ -105,7 +106,7 @@ public class RobotContainer {
 
     m_operatorController.leftBumper().onTrue(m_superStructure.partialRaisePivot()).onFalse(m_superStructure.raisePivot());
     m_operatorController.povUp().onTrue(m_climber.raiseCommand());
-    m_operatorController.povDown().onTrue(m_climber.lowerCommand());
+    m_operatorController.povDown().onTrue(m_superStructure.dropPivot());
 
     m_operatorController.rightBumper()
         .whileTrue(m_superStructure.shootFailsafe())
@@ -165,7 +166,7 @@ public class RobotContainer {
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kCenterHubOutpost);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kCenterHubDepot);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kBasicCenterAutoName);
-    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kLeftTrenchCenterAutoName);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kLeftTrenchCenterZone);
   }
 
   private void addRequestedAutoOption(
