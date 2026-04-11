@@ -62,6 +62,23 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
         return visionPoseUpdateCount;
     }
 
+    public void applyDriverRequestedVisionSnap() {
+        Pose2d visionSnapPose = limelightPose.getDriverRequestedVisionSnapPose();
+        if (visionSnapPose == null) {
+            DriverStation.reportWarning(
+                "Driver requested Limelight pose snap, but no accepted vision pose was available.", false);
+            return;
+        }
+
+        resetPose(visionSnapPose);
+        limelightPose.markDrivePoseVisionResetApplied();
+        visionPoseUpdateCount++;
+    }
+
+    public Command applyDriverRequestedVisionSnapCommand() {
+        return runOnce(this::applyDriverRequestedVisionSnap);
+    }
+
     public void configPathplanner() {
         RobotConfig robotConfig;
 

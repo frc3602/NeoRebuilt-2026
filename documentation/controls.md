@@ -55,6 +55,12 @@ This file describes the current controller bindings from `RobotContainer`.
 - Starts the intake on press.
 - Stops the intake on release.
 
+### `B`
+
+- Snaps the drivetrain pose to the current accepted Limelight pose when pressed.
+- If both Limelights are accepted, the snap uses a trust-weighted blend of their translations.
+- The drivetrain keeps its current heading, so the gyro remains the source of rotation.
+
 ### `Right Trigger`
 
 - Reserved.

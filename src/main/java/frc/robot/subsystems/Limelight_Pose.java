@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -337,6 +338,45 @@ public class Limelight_Pose extends SubsystemBase {
     // Keep the drivetrain's current heading even for strong MegaTag1 solves so the
     // Pigeon remains the exclusive source of robot rotation.
     return new Pose2d(visionPose.getTranslation(), currentDrivePose.getRotation());
+  }
+
+  /**
+   * Returns a driver-requested vision snap pose for major slip recovery.
+   *
+   * When both cameras currently have accepted measurements, we blend their
+   * translations together using estimator trust so the manual snap uses the
+   * collective Limelight view instead of whichever camera barely won selection.
+   * If only one camera is accepted, we fall back to that camera's translation.
+   * Heading is still preserved from the drivetrain so gyro remains authoritative.
+   */
+  public Pose2d getDriverRequestedVisionSnapPose() {
+    if (!driveStateAvailable) {
+      return null;
+    }
+
+    CameraMeasurementDecision selectedDecision = choosePreferredDecision();
+    if (selectedDecision == null || !selectedDecision.acceptedMeasurement || selectedDecision.selectedEstimate == null) {
+      return null;
+    }
+
+    Translation2d snapTranslation = selectedDecision.selectedEstimate.pose.getTranslation();
+
+    if (cam1Decision.acceptedMeasurement && cam1Decision.selectedEstimate != null
+        && cam2Decision.acceptedMeasurement && cam2Decision.selectedEstimate != null) {
+      double cam1Weight = 1.0 / Math.max(cam1Decision.xyStdDev, 0.05);
+      double cam2Weight = 1.0 / Math.max(cam2Decision.xyStdDev, 0.05);
+      double totalWeight = cam1Weight + cam2Weight;
+
+      if (totalWeight > 0.0) {
+        snapTranslation = new Translation2d(
+            (cam1Decision.selectedEstimate.pose.getX() * cam1Weight
+                + cam2Decision.selectedEstimate.pose.getX() * cam2Weight) / totalWeight,
+            (cam1Decision.selectedEstimate.pose.getY() * cam1Weight
+                + cam2Decision.selectedEstimate.pose.getY() * cam2Weight) / totalWeight);
+      }
+    }
+
+    return new Pose2d(snapTranslation, currentDrivePose.getRotation());
   }
 
   /**

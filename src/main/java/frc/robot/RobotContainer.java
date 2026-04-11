@@ -123,6 +123,7 @@ public class RobotContainer {
     m_driverController.leftBumper()
         .onTrue(m_superStructure.runIntake())
         .onFalse(m_superStructure.stopIntake());
+    m_driverController.b().onTrue(m_drivetrain.applyDriverRequestedVisionSnapCommand());
 
     m_operatorController.rightTrigger()
         .and(m_turret::isOutsideAllianceZone)
