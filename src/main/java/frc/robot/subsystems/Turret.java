@@ -13,6 +13,8 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -23,7 +25,15 @@ import frc.robot.Constants.TurretConstants;
 import frc.robot.generated.TunerConstants;
 
 public class Turret extends SubsystemBase {
+    // Keep this under Elastic/Turret so students can tune moving-shot lead live.
+    private static final String kElasticTranslationalLeadGainTopicName = "TranslationalLeadGain";
+
     private final TalonFX turretMotor = new TalonFX(TurretConstants.kTurretMotorID);
+    private final NetworkTableEntry translationalLeadGainEntry =
+        NetworkTableInstance.getDefault()
+            .getTable("Elastic")
+            .getSubTable("Turret")
+            .getEntry(kElasticTranslationalLeadGainTopicName);
     private final DynamicMotionMagicVoltage positionRequest =
         new DynamicMotionMagicVoltage(
             0,
@@ -31,12 +41,15 @@ public class Turret extends SubsystemBase {
             TurretConstants.kTurretAccelerationRotationsPerSecondSquared)
                 .withJerk(TurretConstants.kTurretJerkRotationsPerSecondCubed);
     private final Drivetrain drivetrain;
+    private final Shooter shooter;
 
     private double requestedAngleDegrees = TurretConstants.kTurretStartAngleDegrees;
     private double requestedUnwrappedAngleDegrees = TurretConstants.kTurretStartAngleDegrees;
 
-    public Turret(Drivetrain drivetrain) {
+    public Turret(Drivetrain drivetrain, Shooter shooter) {
         this.drivetrain = drivetrain;
+        this.shooter = shooter;
+        translationalLeadGainEntry.setDefaultDouble(TurretConstants.kTurretTranslationalLeadGain);
         configureMotor();
         seedStartAngle();
         // setTurretAngleDegrees(TurretConstants.kTurretStartAngleDegrees);
@@ -125,7 +138,19 @@ public class Turret extends SubsystemBase {
     }
 
     public double calculateBallTimeOfFlightSeconds(double distanceMeters) {
-        return ShooterConstants.ballTimeOfFlightSecondsForDistanceMeters(distanceMeters);
+        double requiredVelocityMagnitudeRotationsPerSecond = Math.abs(
+            shooter.getRequiredVelocityForDistanceMeters(distanceMeters));
+        return calculateBallTimeOfFlightSeconds(
+            distanceMeters,
+            requiredVelocityMagnitudeRotationsPerSecond);
+    }
+
+    private double calculateBallTimeOfFlightSeconds(
+            double distanceMeters,
+            double shooterVelocityMagnitudeRotationsPerSecond) {
+        return ShooterConstants.ballTimeOfFlightSecondsForDistanceMeters(
+            distanceMeters,
+            shooterVelocityMagnitudeRotationsPerSecond);
     }
 
     public boolean isInCenterField() {
@@ -213,11 +238,17 @@ public class Turret extends SubsystemBase {
         return calculateCompensatedAimAngleDegrees(getCurrentPassCornerTranslation());
     }
 
+    public double getTranslationalLeadGain() {
+        return MathUtil.clamp(
+            translationalLeadGainEntry.getDouble(TurretConstants.kTurretTranslationalLeadGain),
+            0.0,
+            5.0);
+    }
+
     private double calculateCompensatedAimAngleDegrees(Translation2d targetTranslation) {
         Pose2d robotPose = drivetrain.getEstimatedPose();
         Translation2d robotTranslation = robotPose.getTranslation();
-        Translation2d robotToTarget = targetTranslation.minus(robotTranslation);
-        double distanceToTargetMeters = robotToTarget.getNorm();
+        double distanceToTargetMeters = robotTranslation.getDistance(targetTranslation);
 
         if (distanceToTargetMeters < 1e-6) {
             return calculateAimAngleDegrees(targetTranslation);
@@ -227,17 +258,32 @@ public class Turret extends SubsystemBase {
         Translation2d fieldRelativeVelocity = new Translation2d(
             chassisSpeeds.vxMetersPerSecond,
             chassisSpeeds.vyMetersPerSecond).rotateBy(robotPose.getRotation());
+        double translationalLeadGain = getTranslationalLeadGain();
 
-        double lookaheadSeconds = calculateBallTimeOfFlightSeconds(distanceToTargetMeters);
-        Translation2d predictedRobotTranslation = robotTranslation.plus(
-            fieldRelativeVelocity.times(
-                lookaheadSeconds * TurretConstants.kTurretTranslationalLeadGain));
-        double predictedRobotHeadingDegrees =
-            robotPose.getRotation().getDegrees()
-                + Math.toDegrees(
-                    chassisSpeeds.omegaRadiansPerSecond
-                        * lookaheadSeconds
-                        * TurretConstants.kTurretRotationalLeadGain);
+        Translation2d predictedRobotTranslation = robotTranslation;
+        double predictedRobotHeadingDegrees = robotPose.getRotation().getDegrees();
+
+        // Iterate the lead estimate a few times so moving-shot turret aim uses a
+        // time-of-flight that matches the shot speed and predicted release pose.
+        for (int iteration = 0; iteration < 3; iteration++) {
+            double predictedDistanceToTargetMeters =
+                predictedRobotTranslation.getDistance(targetTranslation);
+            double requiredShooterVelocityMagnitudeRotationsPerSecond = Math.abs(
+                shooter.getRequiredVelocityForDistanceMeters(predictedDistanceToTargetMeters));
+            double lookaheadSeconds = calculateBallTimeOfFlightSeconds(
+                predictedDistanceToTargetMeters,
+                requiredShooterVelocityMagnitudeRotationsPerSecond);
+
+            predictedRobotTranslation = robotTranslation.plus(
+                fieldRelativeVelocity.times(
+                    lookaheadSeconds * translationalLeadGain));
+            predictedRobotHeadingDegrees =
+                robotPose.getRotation().getDegrees()
+                    + Math.toDegrees(
+                        chassisSpeeds.omegaRadiansPerSecond
+                            * lookaheadSeconds
+                            * TurretConstants.kTurretRotationalLeadGain);
+        }
 
         return calculateAimAngleDegrees(
             targetTranslation,

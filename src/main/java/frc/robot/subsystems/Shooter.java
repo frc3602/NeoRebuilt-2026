@@ -190,7 +190,7 @@ public class Shooter extends SubsystemBase {
             .getDistance(targetTranslation);
     }
 
-    private double getRequiredVelocityForDistanceMeters(double distanceMeters) {
+    public double getRequiredVelocityForDistanceMeters(double distanceMeters) {
         return applyDistanceShotVelocityOffset(
             ShooterConstants.velocityForDistanceMeters(distanceMeters));
     }

@@ -60,8 +60,8 @@ public class RobotContainer {
   private final Drivetrain m_drivetrain = TunerConstants.createDrivetrain();
   @SuppressWarnings("unused")
   private final Limelight_Pose m_limelightPose = Limelight_Pose.getInstance();
-  private final Turret m_turret = new Turret(m_drivetrain);
   private final Shooter m_shooter = new Shooter(m_drivetrain);
+  private final Turret m_turret = new Turret(m_drivetrain, m_shooter);
   private final Pivot m_pivot = new Pivot();
   private final Climber m_climber = new Climber();
   private final Intake m_intake = new Intake();
