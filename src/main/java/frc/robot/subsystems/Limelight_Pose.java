@@ -551,15 +551,22 @@ public class Limelight_Pose extends SubsystemBase {
    * bouncing between left and right camera updates when they are nearly equal.
    */
   private CameraMeasurementDecision choosePreferredDecision() {
-    if (!poseUpdateAvailableCam1 && !poseUpdateAvailableCam2) {
+    // Use the camera decision objects directly instead of the transient
+    // poseUpdateAvailableCam* flags so driver-requested snaps can still select
+    // the current accepted frame after drivetrain fusion marks those flags
+    // consumed for this loop.
+    boolean cam1Accepted = cam1Decision.acceptedMeasurement && cam1Decision.selectedEstimate != null;
+    boolean cam2Accepted = cam2Decision.acceptedMeasurement && cam2Decision.selectedEstimate != null;
+
+    if (!cam1Accepted && !cam2Accepted) {
       return null;
     }
 
-    if (poseUpdateAvailableCam1 && !poseUpdateAvailableCam2) {
+    if (cam1Accepted && !cam2Accepted) {
       return cam1Decision;
     }
 
-    if (!poseUpdateAvailableCam1 && poseUpdateAvailableCam2) {
+    if (!cam1Accepted && cam2Accepted) {
       return cam2Decision;
     }
 
