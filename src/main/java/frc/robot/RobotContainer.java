@@ -103,9 +103,9 @@ public class RobotContainer {
     m_operatorController.y()
         .whileTrue(m_superStructure.manualFeedReverse())
         .onFalse(m_superStructure.stopShoot());
-
-    m_operatorController.leftBumper().onTrue(m_superStructure.partialRaisePivot()).onFalse(m_superStructure.raisePivot());
-    m_operatorController.povUp().onTrue(m_climber.raiseCommand());
+        
+    m_operatorController.povUp().onTrue(m_superStructure.raisePivot());
+    m_operatorController.povRight().onTrue(m_superStructure.partialRaisePivot());
     m_operatorController.povDown().onTrue(m_superStructure.dropPivot());
 
     m_operatorController.rightBumper()
