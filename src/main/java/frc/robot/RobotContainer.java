@@ -46,7 +46,8 @@ public class RobotContainer {
     private static final String kCenterHubOutpost = "Center Hub, Outpost";
     private static final String kCenterHubDepot = "Center Hub, Depot";
     private static final String kBasicCenterAutoName = "Basic Center Auto";
-    private static final String kLeftTrenchCenterLeftAlliance = "Left Trench, Center, Left Alliance";
+    private static final String kScratchRightTrenchCenter = "Scratch Right Trench, Center Zone";
+    private static final String kScratchLeftTrenchCenter = "Scratch Left Trench, Center Zone";
     private static final String kLeftTrenchCenterZone = "Left Trench, Center Zone";
 
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                                                   // speed
@@ -169,6 +170,8 @@ public class RobotContainer {
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kCenterHubDepot);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kBasicCenterAutoName);
     addRequestedAutoOption(availableAutoNames, chooserAutoNames, kLeftTrenchCenterZone);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kScratchLeftTrenchCenter);
+    addRequestedAutoOption(availableAutoNames, chooserAutoNames, kScratchRightTrenchCenter);
   }
 
   private void addRequestedAutoOption(
