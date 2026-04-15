@@ -113,7 +113,7 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double VISION_RESET_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 6.0;
   private static final double MAX_VISION_RESET_MEASUREMENT_AGE_SECONDS = 0.20;
   private static final double MIN_VISION_RESET_TRANSLATION_ERROR_METERS = 0.20;
-  private static final double MAX_VISION_RESET_TRANSLATION_ERROR_METERS = 2.50;
+  private static final double MAX_VISION_RESET_TRANSLATION_ERROR_METERS = 5.0; //Used to be 2.5
   private static final int MIN_VISION_RESET_TAG_COUNT = 2;
   private static final double MIN_VISION_RESET_AVG_TAG_AREA = 0.04;
   private static final double MAX_VISION_RESET_AMBIGUITY = 0.40;

@@ -237,8 +237,8 @@ public final class Constants {
         public static final int kPivotFollowerMotorID = 14;
 
         // Intake roller Motion Magic velocity tuning
-        public static final double kIntakeForwardVelocityRotationsPerSecond = -70.0;
-        public static final double kIntakeReverseVelocityRotationsPerSecond = 70.0;
+        public static final double kIntakeForwardVelocityRotationsPerSecond = -96.0;//-70
+        public static final double kIntakeReverseVelocityRotationsPerSecond = 96.0;//70
         public static final double kIntakeVelocityKP = 0.12;
         public static final double kIntakeVelocityKI = 0.0;
         public static final double kIntakeVelocityKD = 0.0;
@@ -260,8 +260,8 @@ public final class Constants {
         public static final double kPivotKI = 0.0;
         public static final double kPivotKD = 0.0;
         public static final double kPivotKG = 0.0;
-        public static final double kPivotCruiseVelocityRotationsPerSecond = 35.0;
-        public static final double kPivotAccelerationRotationsPerSecondSquared = 80.0;
+        public static final double kPivotCruiseVelocityRotationsPerSecond = 75.0;
+        public static final double kPivotAccelerationRotationsPerSecondSquared = 110.0;
         public static final double kPivotJerkRotationsPerSecondCubed = 400.0;
 
     }

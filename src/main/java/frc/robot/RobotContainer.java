@@ -42,7 +42,7 @@ public class RobotContainer {
     private static final String kLeftTrenchDepotAutoName = "Left Trench, Depot";
     private static final String kShootTestAutoName = "Shoot Test";
     private static final String kRightTrenchOutpostAutoName = "Right Trench, Outpost";
-    private static final String kRightTrenchCenterRightAlliance = "Right Trench, Center, Right Alliance";
+    private static final String kRightTrenchCenterRightAlliance = "Right Trench, Center Zone";
     private static final String kCenterHubOutpost = "Center Hub, Outpost";
     private static final String kCenterHubDepot = "Center Hub, Depot";
     private static final String kBasicCenterAutoName = "Basic Center Auto";
