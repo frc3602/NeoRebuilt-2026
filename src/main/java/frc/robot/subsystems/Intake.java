@@ -30,6 +30,12 @@ public class Intake extends SubsystemBase {
             velocityRequest.withVelocity(targetVelocityRotationsPerSecond));
     }
 
+    public void intakeForwardCrawl() {
+        targetVelocityRotationsPerSecond = IntakeConstants.kIntakeCrawlSpeed;
+        intakeMotor.setControl(
+            velocityRequest.withVelocity(targetVelocityRotationsPerSecond));
+    }
+
     public void intakeReverse() {
         targetVelocityRotationsPerSecond = IntakeConstants.kIntakeReverseVelocityRotationsPerSecond;
         intakeMotor.setControl(
@@ -51,6 +57,10 @@ public class Intake extends SubsystemBase {
 
     public Command intakeForwardCommand() {
         return runOnce(this::intakeForward);
+    }
+
+    public Command intakeForwardCrawlCommand(){
+        return runOnce(this::intakeForwardCrawl);
     }
 
     public Command intakeReverseCommand() {

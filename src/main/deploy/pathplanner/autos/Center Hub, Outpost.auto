@@ -17,6 +17,18 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 4.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Outpost, Middle"
+          }
+        },
+        {
           "type": "parallel",
           "data": {
             "commands": [

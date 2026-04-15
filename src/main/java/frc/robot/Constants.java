@@ -26,7 +26,7 @@ public final class Constants {
         private static final double kLegacyShooterFailsafeVelocityRotationsPerSecond = 37.5;
         //Only for failsafe and reference shot, not tracked shot with pose.
         private static final double kOverallShotVelocityScale = 1.0;
-        private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond = 44.0
+        private static final double kReferenceShotVelocityMagnitudeRotationsPerSecond = 38.0
                 * kOverallShotVelocityScale;
         private static final double kReferenceFeedVelocityMagnitudeRotationsPerSecond = legacyMotorRpsToMechanismRps(
                 kLegacyShooterCommandMaxVelocityRotationsPerSecond);
@@ -247,6 +247,8 @@ public final class Constants {
         public static final double kIntakeVelocityKA = 0.0;
         public static final double kIntakeAccelerationRotationsPerSecondSquared = 120.0;
         public static final double kIntakeJerkRotationsPerSecondCubed = 0.0;
+        
+        public static final double kIntakeCrawlSpeed = -5;
 
         // Pivot limits and Motion Magic tuning
         public static final double kPivotCurrentLimit = 10;
@@ -409,10 +411,9 @@ public final class Constants {
         public static final Translation2d kRedTowerPosition = new Translation2d(11.919, 4.029);
         public static final Translation2d kBlueHubPosition = kBlueTowerPosition;
         public static final Translation2d kRedHubPosition = kRedTowerPosition;
-        public static final Translation2d kBlueRightPassCornerPosition = new Translation2d(1.0, 1.0);
-        public static final Translation2d kBlueLeftPassCornerPosition = new Translation2d(1.0, 7.0);
-        public static final Translation2d kRedRightPassCornerPosition = new Translation2d(kFieldLengthMeters - 1.0,
-                1.0);
-        public static final Translation2d kRedLeftPassCornerPosition = new Translation2d(kFieldLengthMeters - 1.0, 7.0);
+        public static final Translation2d kBlueRightPassCornerPosition = new Translation2d(3.0, 3.0);
+        public static final Translation2d kBlueLeftPassCornerPosition = new Translation2d(3.0, 5.0);
+        public static final Translation2d kRedRightPassCornerPosition = new Translation2d(kFieldLengthMeters - 3.0, 3.0);
+        public static final Translation2d kRedLeftPassCornerPosition = new Translation2d(kFieldLengthMeters - 3.0, 5.0);
     }
 }
