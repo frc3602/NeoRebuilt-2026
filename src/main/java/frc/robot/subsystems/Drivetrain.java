@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-
+import frc.robot.LimelightHelpers;
 import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.Limelight_Pose.AcceptedVisionMeasurement;
@@ -28,6 +28,9 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
     private final SwerveRequest.ApplyRobotSpeeds autoRobotDrive = new SwerveRequest.ApplyRobotSpeeds();
     private final Limelight_Pose limelightPose = Limelight_Pose.getInstance();
     private long visionPoseUpdateCount = 0;
+    public boolean goodTagAmount = false;
+    public boolean limelightRightTV = LimelightHelpers.getTV("limelight-right");
+    public boolean limelightLeftTV = LimelightHelpers.getTV("limelight-left");
 
     public Drivetrain(
             SwerveDrivetrainConstants drivetrainConstants,
@@ -60,6 +63,15 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
     public long getVisionPoseUpdateCount() {
         return visionPoseUpdateCount;
+    }
+
+    public void upadateGoodTagAmount(){
+        if(limelightRightTV == true && limelightLeftTV == true){
+          goodTagAmount = true;
+        }
+        else {
+            goodTagAmount = false;
+        }
     }
 
     public void applyDriverRequestedVisionSnap() {
@@ -112,6 +124,7 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
     @Override
     public void periodic() {
         var state = getState();
+        upadateGoodTagAmount();
         double linearSpeedMetersPerSecond = Math.hypot(
             state.Speeds.vxMetersPerSecond,
             state.Speeds.vyMetersPerSecond
@@ -150,6 +163,8 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
             limelightPose.UpdateVisionCorrectionAdded();
         }
     }
+
+    
 
     /* ---------------- Simulation ---------------- */
 

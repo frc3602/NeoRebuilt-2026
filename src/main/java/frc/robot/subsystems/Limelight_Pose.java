@@ -144,6 +144,8 @@ public class Limelight_Pose extends SubsystemBase {
     return _instance;
   }
 
+  
+
   public boolean poseUpdatesFromCameraActive = true;
 
   public PoseEstimate poseCamEstimate;

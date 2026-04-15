@@ -123,6 +123,7 @@ public class RobotContainer {
     m_driverController.leftBumper()
         .onTrue(m_superStructure.runIntake())
         .onFalse(m_superStructure.stopIntake());
+    m_driverController.leftTrigger().onTrue(m_superStructure.raisePivot());
     m_driverController.b().onTrue(m_drivetrain.applyDriverRequestedVisionSnapCommand());
 
     m_operatorController.rightTrigger()
@@ -309,4 +310,6 @@ public class RobotContainer {
   private Command reportUnimplementedDriveMode(String message) {
     return Commands.runOnce(() -> DriverStation.reportWarning(message, false));
   }
+
+
 }

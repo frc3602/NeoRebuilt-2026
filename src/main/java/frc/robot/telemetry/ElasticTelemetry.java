@@ -89,6 +89,7 @@ public class ElasticTelemetry {
   private final DoublePublisher m_receiverCurrentPublisher;
   private final BooleanPublisher m_spindexerFeedingPublisher;
   private final Alert m_batteryLowAlert;
+  private final BooleanPublisher m_goodTagAmount;
 
   public ElasticTelemetry() {
     NetworkTable elasticTable = NetworkTableInstance.getDefault().getTable("Elastic");
@@ -168,6 +169,7 @@ public class ElasticTelemetry {
     m_spindexerCurrentPublisher = spindexerTable.getDoubleTopic("SpindexerCurrentAmps").publish();
     m_receiverCurrentPublisher = spindexerTable.getDoubleTopic("ReceiverCurrentAmps").publish();
     m_spindexerFeedingPublisher = spindexerTable.getBooleanTopic("FeedingCommanded").publish();
+    m_goodTagAmount = driveTable.getBooleanTopic("goodTagAmount").publish();
 
     m_batteryLowAlert =
         new Alert("Battery voltage is below 12V. Change the battery.", AlertType.kWarning);
@@ -277,6 +279,7 @@ public class ElasticTelemetry {
     m_spindexerFeedingPublisher.set(
         Math.abs(spindexer.getSpindexerTargetVelocityRotationsPerSecond()) > 1e-6
             || Math.abs(spindexer.getReceiverTargetVelocityRotationsPerSecond()) > 1e-6);
+    m_goodTagAmount.set(drivetrain.goodTagAmount);
   }
 
   private String getRobotMode() {
