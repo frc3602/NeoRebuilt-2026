@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -51,6 +52,8 @@ public class Pivot extends SubsystemBase {
         motionMagicConfig.MotionMagicAcceleration =
             IntakeConstants.kPivotAccelerationRotationsPerSecondSquared;
         motionMagicConfig.MotionMagicJerk = IntakeConstants.kPivotJerkRotationsPerSecondCubed;
+
+        
 
         intakePivot.getConfigurator().apply(motorConfig);
         intakePivot.getConfigurator().apply(limitConfig);

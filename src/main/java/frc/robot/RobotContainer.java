@@ -108,7 +108,8 @@ public class RobotContainer {
     m_operatorController.povUp().onTrue(m_superStructure.raisePivot());
     m_operatorController.povRight().onTrue(m_superStructure.partialRaisePivot());
     m_operatorController.povDown().onTrue(m_superStructure.dropPivot());
-
+    m_operatorController.leftBumper().onTrue(m_superStructure.shootMiddleFailsafe()).onFalse(m_superStructure.stopShoot());
+    m_operatorController.leftTrigger().whileTrue(m_superStructure.shootFarFailsafe()).onFalse(m_superStructure.stopShoot());
     m_operatorController.rightBumper()
         .whileTrue(m_superStructure.shootFailsafe())
         .onFalse(m_superStructure.stopShoot());

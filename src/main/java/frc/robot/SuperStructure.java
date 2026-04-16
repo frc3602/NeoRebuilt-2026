@@ -18,6 +18,7 @@ public class SuperStructure {
         SpindexerConstants.scaleSpindexerVelocityRotationsPerSecond(56.125);
     private static final double kFailsafeShooterVelocityRotationsPerSecond =
         ShooterConstants.kShooterTargetVelocityRotationsPerSecond;
+    private static final double kFarFailsafeShooterVelocityRotationsPerSecond = 70;
     private static final double kTrackedShotReadyToleranceRotationsPerSecond = 2.5;
     private static final double kTrackedShotFeedToleranceRotationsPerSecond = 2.5;
     private static final double kTrackedShotFeedDelaySeconds = 0.50;
@@ -68,6 +69,22 @@ public class SuperStructure {
             Commands.run(() -> turret.setTurretAngleDegrees(180.0), turret),
             Commands.run(() -> shooter.setVelocityRotationsPerSecond(
                 kFailsafeShooterVelocityRotationsPerSecond), shooter),
+            waitUntilReadyThenContinuousFeedCommand(this::isTurretAndShooterReadyToFeedShot));
+    }
+
+        public Command shootMiddleFailsafe() {
+        return Commands.parallel(
+            Commands.run(() -> turret.setTurretAngleDegrees(180.0), turret),
+            Commands.run(() -> shooter.setVelocityRotationsPerSecond(
+                53), shooter),
+            waitUntilReadyThenContinuousFeedCommand(this::isTurretAndShooterReadyToFeedShot));
+    }
+
+    public Command shootFarFailsafe() {
+        return Commands.parallel(
+            Commands.run(() -> turret.setTurretAngleDegrees(180.0), turret),
+            Commands.run(() -> shooter.setVelocityRotationsPerSecond(
+                62), shooter),
             waitUntilReadyThenContinuousFeedCommand(this::isTurretAndShooterReadyToFeedShot));
     }
 
@@ -258,6 +275,12 @@ public class SuperStructure {
             shooter.setVelocityCommand(kFailsafeShooterVelocityRotationsPerSecond));
     }
 
+    public Command autonPrepareFarFailsafeShot() {
+        return Commands.parallel(
+            turret.rearPresetCommand(),
+            shooter.setVelocityCommand(kFailsafeShooterVelocityRotationsPerSecond));
+    }
+
     public Command autonWaitForTrackedShotReady() {
         return Commands.sequence(
             Commands.waitUntil(this::isTrackedBallisticShotFeedReady),
@@ -321,6 +344,13 @@ public class SuperStructure {
     }
 
     public Command autonShootFailsafeShot() {
+        return Commands.sequence(
+            autonPrepareFailsafeShot(),
+            Commands.waitUntil(this::isTurretAndShooterReadyToFeedShot),
+            autonFeedShot());
+    }
+
+        public Command autonShootFarFailsafeShot() {
         return Commands.sequence(
             autonPrepareFailsafeShot(),
             Commands.waitUntil(this::isTurretAndShooterReadyToFeedShot),
