@@ -84,7 +84,7 @@ public class SuperStructure {
         return Commands.parallel(
             Commands.run(() -> turret.setTurretAngleDegrees(180.0), turret),
             Commands.run(() -> shooter.setVelocityRotationsPerSecond(
-                62), shooter),
+                48), shooter),
             waitUntilReadyThenContinuousFeedCommand(this::isTurretAndShooterReadyToFeedShot));
     }
 

@@ -13,6 +13,18 @@
         {
           "type": "path",
           "data": {
+            "pathName": "Depot Backup"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Back Into Depot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
             "pathName": "Depot, Left Alliance"
           }
         },

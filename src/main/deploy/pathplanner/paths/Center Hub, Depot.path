@@ -16,16 +16,16 @@
     },
     {
       "anchor": {
-        "x": 0.29904444444444434,
-        "y": 5.944911111111111
+        "x": 0.28024719101123563,
+        "y": 6.307595505617977
       },
       "prevControl": {
-        "x": 0.9032,
-        "y": 5.993633333333333
+        "x": 0.8844027465667914,
+        "y": 6.356317727840199
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Depot Pose"
     }
   ],
   "rotationTargets": [],
